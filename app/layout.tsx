@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope, Inter} from "next/font/google";
 import "./globals.css";
+import { OnboardingProvider } from "@/components/OnboardingProvider";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -31,7 +32,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${manrope.variable} ${inter.variable}`}>
-      <body className="font-body text-ink antialiased">{children}</body>
+      <body className="font-body text-ink antialiased">
+        <OnboardingProvider>{children}</OnboardingProvider>
+      </body>
     </html>
   );
 }
