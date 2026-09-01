@@ -3,6 +3,8 @@ export function SelectRow({
   note,
   selected,
   disabled,
+  dimmed,
+  attached,
   badge,
   onClick,
 }: {
@@ -10,6 +12,8 @@ export function SelectRow({
   note: string;
   selected: boolean;
   disabled?: boolean;
+  dimmed?: boolean;
+  attached?: boolean;
   badge?: React.ReactNode;
   onClick: () => void;
 }) {
@@ -18,9 +22,13 @@ export function SelectRow({
       onClick={onClick}
       disabled={disabled}
       aria-pressed={selected}
-      className={`flex w-full items-center gap-3.5 rounded-[18px] px-4 py-3.5 text-left transition-colors ${
-        selected ? "bg-white shadow-lift" : "bg-white/55 shadow-[0_1px_2px_rgb(32_30_29_/_0.05)]"
-      } ${disabled ? "opacity-50" : "hover:bg-red-tint"}`}
+      className={`flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition-colors ${
+        attached ? "rounded-t-[18px]" : "rounded-[18px]"
+      } ${
+        selected
+          ? "bg-white shadow-lift"
+          : "bg-white/55 shadow-[0_1px_2px_rgb(32_30_29_/_0.05)]"
+      } ${dimmed ? "opacity-50" : ""} ${disabled ? "" : "hover:bg-red-tint"}`}
     >
       <span
         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold text-white ${

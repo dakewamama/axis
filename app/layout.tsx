@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Manrope, Inter} from "next/font/google";
 import "./globals.css";
 import { OnboardingProvider } from "@/components/OnboardingProvider";
+import { WalletProvider } from "@/components/WalletProvider";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -33,7 +34,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${manrope.variable} ${inter.variable}`}>
       <body className="font-body text-ink antialiased">
-        <OnboardingProvider>{children}</OnboardingProvider>
+        <OnboardingProvider>
+          <WalletProvider>{children}</WalletProvider>
+        </OnboardingProvider>
       </body>
     </html>
   );

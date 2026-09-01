@@ -70,7 +70,7 @@ export default function ServicesPage() {
                 disabled={!request.trim()}
                 className="w-full rounded-full bg-ink py-3.5 text-sm font-bold text-white transition-colors hover:bg-red disabled:opacity-40"
               >
-                {requested ? "Noted — thank you" : "Request it"}
+                {requested ? "Noted, thank you" : "Request it"}
               </button>
             </div>
           </div>
