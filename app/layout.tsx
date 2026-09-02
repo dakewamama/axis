@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope, Inter} from "next/font/google";
-import "./globals.css";
+import { Manrope, Inter } from "next/font/google";
 import { OnboardingProvider } from "@/components/OnboardingProvider";
 import { WalletProvider } from "@/components/WalletProvider";
+import { LocationProvider } from "@/components/LocationProvider";
+import "./globals.css";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -17,8 +18,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Axis    stop downloading apps",
-  description: "One chat that orders food, books rides, pays bills and moves money. Type it like you'd say it.",
+  title: "Axis — stop downloading apps",
+  description:
+    "One chat that orders food, books rides, pays bills and moves money. Type it like you'd say it.",
 };
 
 export const viewport: Viewport = {
@@ -35,7 +37,9 @@ export default function RootLayout({
     <html lang="en" className={`${manrope.variable} ${inter.variable}`}>
       <body className="font-body text-ink antialiased">
         <OnboardingProvider>
-          <WalletProvider>{children}</WalletProvider>
+          <WalletProvider>
+            <LocationProvider>{children}</LocationProvider>
+          </WalletProvider>
         </OnboardingProvider>
       </body>
     </html>

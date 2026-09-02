@@ -5,21 +5,24 @@ import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { AxisGlyph } from "@/components/AxisMark";
 import { Sheet } from "@/components/Sheet";
+import { PlacesSheet } from "@/components/PlacesSheet";
 import { useOnboarding } from "@/components/OnboardingProvider";
 import { useWallet } from "@/components/WalletProvider";
+import { useLocation } from "@/components/LocationProvider";
 import { NGN } from "@/lib/format";
 
-const SHORTCUTS = [
-  { label: "Order food", note: "Nadia's, Chicken Republic" },
-  { label: "Book a ride", note: "Compares 3 apps" },
-  { label: "Buy airtime", note: "MTN · 0803" },
-  { label: "Pay a bill", note: "Ikeja Electric" },
+const EXAMPLES = [
+  "does nadia have chicken wings",
+  "cheapest ride to yaba right now",
+  "₦2k airtime on my 0803 line",
+  "pay my Ikeja Electric bill",
 ];
 
-const RECENTS = [
-  { icon: "🍗", label: "Nadia's Kitchen", when: "Yesterday · delivered", amount: "₦6,700" },
-  { icon: "🚗", label: "Ride to Yaba", when: "Tue · Bolt via Axis", amount: "₦1,850" },
-  { icon: "📶", label: "MTN airtime", when: "Mon", amount: "₦1,000" },
+const LEDGER = [
+  { label: "Nadia's Kitchen", when: "Yesterday", amount: -6700 },
+  { label: "Ride to Yaba", when: "Tuesday", amount: -1850 },
+  { label: "Wallet top-up", when: "Tuesday", amount: 10000 },
+  { label: "MTN airtime", when: "Monday", amount: -1000 },
 ];
 
 const TOP_UP_AMOUNTS = [1000, 5000, 10000];
@@ -28,106 +31,134 @@ export default function HomePage() {
   const router = useRouter();
   const { name } = useOnboarding();
   const { balance, topUp } = useWallet();
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const { activeLabel } = useLocation();
+  const [draft, setDraft] = useState("");
+  const [topUpOpen, setTopUpOpen] = useState(false);
+  const [placesOpen, setPlacesOpen] = useState(false);
   const [picked, setPicked] = useState(5000);
 
-  const firstName = name.trim() || "there";
+  const firstName = name.trim();
+
+  function ask(text: string) {
+    if (text.trim()) router.push(`/chat?q=${encodeURIComponent(text.trim())}`);
+  }
 
   return (
     <PhoneFrame>
       <div className="flex flex-1 animate-rise flex-col overflow-hidden">
-        <div className="flex items-end justify-between px-5 pt-4 pb-3">
-          <h2 className="font-display text-[28px] font-extrabold tracking-[-0.02em] text-ink">
-            Axis
-          </h2>
-          <span className="text-[11px] tracking-[0.08em] text-faint uppercase">
-            Lagos
+        <div className="flex shrink-0 items-center gap-2 px-5 pt-4 pb-2">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-ink">
+            <AxisGlyph size={18} />
           </span>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">
-          <div className="flex items-center justify-between rounded-[24px] bg-ink p-[18px] shadow-[0_18px_36px_-20px_rgb(32_30_29_/_0.6)]">
-            <span>
-              <span className="block text-[10px] font-bold tracking-[0.1em] text-cream/60 uppercase">
-                Axis wallet
-              </span>
-              <span className="mt-1 block font-display text-[30px] font-extrabold tracking-[-0.02em] text-cream">
-                {NGN(balance)}
-              </span>
-            </span>
-            <button
-              onClick={() => setSheetOpen(true)}
-              className="rounded-full bg-cream px-[17px] py-[11px] text-[13px] font-bold text-ink transition-colors hover:bg-red hover:text-white"
-            >
-              Add money
-            </button>
-          </div>
-
           <button
-            onClick={() => router.push("/chat")}
-            className="mt-3.5 flex w-full items-center gap-3.5 rounded-[20px] bg-white px-4 py-[15px] text-left shadow-lift transition-colors hover:bg-red-tint"
+            onClick={() => setPlacesOpen(true)}
+            className="flex min-w-0 items-center gap-1.5 rounded-full px-2 py-1.5 transition-colors hover:bg-white"
           >
-            <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full bg-ink">
-              <AxisGlyph size={26} />
+            <span className="truncate text-[13px] font-semibold text-muted">
+              {activeLabel}
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="flex items-baseline justify-between">
-                <span className="text-[15.5px] font-bold text-ink">Axis</span>
-                <span className="text-[11px] text-faint">now</span>
-              </span>
-              <span className="mt-0.5 block truncate text-[12.5px] text-muted">
-                Ready when you are, {firstName}. Try asking me something.
-              </span>
+            <span className="shrink-0 text-[9px] text-faint">▼</span>
+          </button>
+          <button
+            onClick={() => setTopUpOpen(true)}
+            className="ml-auto flex shrink-0 items-center gap-2 rounded-full bg-white py-2 pr-2 pl-3.5 shadow-card transition-colors hover:bg-red-tint"
+          >
+            <span className="font-display text-[15px] font-extrabold tracking-[-0.01em] text-ink">
+              {NGN(balance)}
+            </span>
+            <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-red text-[15px] leading-none font-bold text-white">
+              +
             </span>
           </button>
+        </div>
 
-          <div className="mt-6 mb-3 px-0.5 text-[10px] font-bold tracking-[0.1em] text-faint uppercase">
-            Your shortcuts
+        <div className="min-h-0 flex-1 overflow-y-auto px-5">
+          <div className="pt-8 pb-5">
+            <h2 className="font-display text-[38px] leading-[1.02] font-extrabold tracking-[-0.03em] text-balance text-ink">
+              {firstName ? `What do you need, ${firstName}?` : "What do you need?"}
+            </h2>
           </div>
-          <div className="grid grid-cols-2 gap-2.5">
-            {SHORTCUTS.map((s) => (
+
+          <div className="rounded-[24px] bg-white p-2 shadow-lift">
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  ask(draft);
+                }
+              }}
+              rows={2}
+              placeholder="Type it like you'd say it…"
+              className="w-full resize-none bg-transparent px-3 pt-3 pb-1 text-[16px] leading-[1.45] text-ink outline-none placeholder:text-unfilled"
+            />
+            <div className="flex items-center justify-between pt-1 pl-3">
+              <span className="text-[11px] text-faint">
+                Food · rides · bills · money
+              </span>
               <button
-                key={s.label}
-                onClick={() => router.push("/chat")}
-                className="rounded-[18px] bg-white px-3.5 py-[15px] text-left shadow-card transition-colors hover:bg-red-tint"
+                onClick={() => ask(draft)}
+                disabled={!draft.trim()}
+                aria-label="Ask Axis"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red text-lg text-white transition-all hover:bg-red-dark disabled:bg-unfilled"
               >
-                <span className="block text-[14.5px] leading-[1.2] font-bold text-ink">
-                  {s.label}
+                &rarr;
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-col gap-1.5">
+            {EXAMPLES.map((e) => (
+              <button
+                key={e}
+                onClick={() => ask(e)}
+                className="group flex items-center gap-2.5 rounded-full py-1.5 text-left transition-colors"
+              >
+                <span className="h-[5px] w-[5px] shrink-0 rounded-full bg-unfilled transition-colors group-hover:bg-red" />
+                <span className="text-[14px] text-muted transition-colors group-hover:text-ink">
+                  {e}
                 </span>
-                <span className="mt-1 block text-[11px] text-faint">{s.note}</span>
               </button>
             ))}
           </div>
 
-          <div className="mt-6 mb-3 px-0.5 text-[10px] font-bold tracking-[0.1em] text-faint uppercase">
-            Recent
+          <div className="mt-9 mb-1 flex items-baseline justify-between">
+            <span className="text-[10px] font-bold tracking-[0.1em] text-faint uppercase">
+              This week
+            </span>
+            <span className="text-[11px] text-faint">4 orders</span>
           </div>
-          <div className="flex flex-col gap-2">
-            {RECENTS.map((r) => (
+          <div className="pb-8">
+            {LEDGER.map((l) => (
               <div
-                key={r.label}
-                className="flex items-center gap-3.5 rounded-[18px] bg-white px-4 py-3.5 shadow-[0_1px_2px_rgb(32_30_29_/_0.08)]"
+                key={l.label}
+                className="flex items-baseline justify-between gap-3 border-b border-line py-3.5 last:border-0"
               >
-                <span className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-line text-base">
-                  {r.icon}
-                </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-bold text-ink">
-                    {r.label}
+                  <span className="block truncate text-[14px] font-semibold text-ink">
+                    {l.label}
                   </span>
                   <span className="mt-0.5 block text-[11px] text-faint">
-                    {r.when}
+                    {l.when}
                   </span>
                 </span>
-                <span className="text-[13px] font-bold whitespace-nowrap text-ink">
-                  {r.amount}
+                <span
+                  className={`text-[14px] font-bold whitespace-nowrap ${
+                    l.amount > 0 ? "text-red-deep" : "text-ink"
+                  }`}
+                >
+                  {l.amount > 0 ? "+" : "−"}
+                  {NGN(Math.abs(l.amount))}
                 </span>
               </div>
             ))}
           </div>
         </div>
 
-        <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)}>
+        <PlacesSheet open={placesOpen} onClose={() => setPlacesOpen(false)} />
+
+        <Sheet open={topUpOpen} onClose={() => setTopUpOpen(false)}>
           <div className="px-5 pt-2.5 pb-1">
             <span className="block font-display text-2xl font-extrabold tracking-[-0.02em] text-ink">
               Add money
@@ -154,14 +185,14 @@ export default function HomePage() {
             <button
               onClick={() => {
                 topUp(picked);
-                setSheetOpen(false);
+                setTopUpOpen(false);
               }}
               className="mt-4 w-full rounded-full bg-red py-[17px] text-[15.5px] font-bold text-white transition-colors hover:bg-red-dark"
             >
               Continue to Paystack
             </button>
             <button
-              onClick={() => setSheetOpen(false)}
+              onClick={() => setTopUpOpen(false)}
               className="mt-1.5 w-full rounded-full py-3.5 text-sm font-semibold text-muted transition-colors hover:bg-line"
             >
               Not now
