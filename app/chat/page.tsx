@@ -76,6 +76,7 @@ function ChatThread() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seeded = useRef(false);
 
   const firstName = name.trim() || "there";
   const dish = chosen !== null ? DISHES[chosen] : null;
@@ -118,7 +119,10 @@ function ChatThread() {
   );
 
   useEffect(() => {
-    if (seed) send(seed);
+    if (seed && !seeded.current) {
+      seeded.current = true;
+      send(seed);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seed]);
 
@@ -310,8 +314,9 @@ function ChatThread() {
           />
           <button
             onClick={() => draft.trim() && send(draft.trim())}
+            disabled={!draft.trim()}
             aria-label="Send"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red text-[19px] text-white transition-colors hover:bg-red-dark"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red text-[19px] text-white transition-all hover:bg-red-dark disabled:opacity-30"
           >
             &rarr;
           </button>

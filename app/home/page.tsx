@@ -82,14 +82,18 @@ export default function HomePage() {
           <div className="rounded-[24px] bg-white p-2 shadow-lift">
             <textarea
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   ask(draft);
                 }
               }}
-              rows={2}
+              rows={1}
               placeholder="Type it like you'd say it…"
               className="w-full resize-none bg-transparent px-3 pt-3 pb-1 text-[16px] leading-[1.45] text-ink outline-none placeholder:text-unfilled"
             />
@@ -101,7 +105,7 @@ export default function HomePage() {
                 onClick={() => ask(draft)}
                 disabled={!draft.trim()}
                 aria-label="Ask Axis"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red text-lg text-white transition-all hover:bg-red-dark disabled:bg-unfilled"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink text-lg text-white transition-all hover:bg-red disabled:opacity-25"
               >
                 &rarr;
               </button>
