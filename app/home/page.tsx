@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { AxisGlyph } from "@/components/AxisMark";
-import { Sheet } from "@/components/Sheet";
 import { PlacesSheet } from "@/components/PlacesSheet";
+import { AddMoneySheet } from "@/components/AddMoneySheet";
 import { useOnboarding } from "@/components/OnboardingProvider";
 import { useWallet } from "@/components/WalletProvider";
 import { useLocation } from "@/components/LocationProvider";
@@ -25,17 +25,14 @@ const LEDGER = [
   { label: "MTN airtime", when: "Monday", amount: -1000 },
 ];
 
-const TOP_UP_AMOUNTS = [1000, 5000, 10000];
-
 export default function HomePage() {
   const router = useRouter();
   const { name } = useOnboarding();
-  const { balance, topUp } = useWallet();
+  const { balance, axisAddress } = useWallet();
   const { activeLabel } = useLocation();
   const [draft, setDraft] = useState("");
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [placesOpen, setPlacesOpen] = useState(false);
-  const [picked, setPicked] = useState(5000);
 
   const firstName = name.trim();
 
@@ -162,47 +159,11 @@ export default function HomePage() {
 
         <PlacesSheet open={placesOpen} onClose={() => setPlacesOpen(false)} />
 
-        <Sheet open={topUpOpen} onClose={() => setTopUpOpen(false)}>
-          <div className="px-5 pt-2.5 pb-1">
-            <span className="block font-display text-2xl font-extrabold tracking-[-0.02em] text-ink">
-              Add money
-            </span>
-            <span className="mt-1 block text-[12.5px] text-faint">
-              Tops up your Axis wallet via Paystack. Axis never holds this
-              balance directly.
-            </span>
-          </div>
-          <div className="grid grid-cols-3 gap-2.5 px-5 pt-4 pb-1">
-            {TOP_UP_AMOUNTS.map((v) => (
-              <button
-                key={v}
-                onClick={() => setPicked(v)}
-                className={`rounded-2xl px-1.5 py-3.5 text-sm font-bold transition-colors ${
-                  picked === v ? "bg-red text-white" : "bg-line text-ink"
-                }`}
-              >
-                {NGN(v)}
-              </button>
-            ))}
-          </div>
-          <div className="px-5 pb-7">
-            <button
-              onClick={() => {
-                topUp(picked);
-                setTopUpOpen(false);
-              }}
-              className="mt-4 w-full rounded-full bg-red py-[17px] text-[15.5px] font-bold text-white transition-colors hover:bg-red-dark"
-            >
-              Continue to Paystack
-            </button>
-            <button
-              onClick={() => setTopUpOpen(false)}
-              className="mt-1.5 w-full rounded-full py-3.5 text-sm font-semibold text-muted transition-colors hover:bg-line"
-            >
-              Not now
-            </button>
-          </div>
-        </Sheet>
+        <AddMoneySheet
+          open={topUpOpen}
+          onClose={() => setTopUpOpen(false)}
+          axisAddress={axisAddress}
+        />
       </div>
     </PhoneFrame>
   );
