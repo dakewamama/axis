@@ -1,8 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import dynamic from "next/dynamic";
 import { Sheet } from "@/components/Sheet";
+
+// The QR generator is ~285 KB. Load it only when the deposit view actually
+// mounts (a user interaction), never in the initial /home bundle.
+const QRCodeSVG = dynamic(
+  () => import("qrcode.react").then((m) => m.QRCodeSVG),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[168px] w-[168px] items-center justify-center text-[12px] text-faint">
+        Loading QR…
+      </div>
+    ),
+  },
+);
 import {
   getDepositAddress,
   buildTransfer,
