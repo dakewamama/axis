@@ -46,7 +46,7 @@ export default function SplashPage() {
 
           <Link
             href="/auth"
-            className="mt-1.5 block rounded-full bg-red-deep py-[17px] text-center text-[15.5px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark"
+            className="mt-1.5 block rounded-full bg-red py-[17px] text-center text-[15.5px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark"
           >
             Get started
           </Link>

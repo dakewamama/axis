@@ -16,7 +16,7 @@ export default function NotFound() {
         </p>
         <Link
           href="/"
-          className="mt-7 rounded-full bg-red-deep px-7 py-[15px] text-[15px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
+          className="mt-7 rounded-full bg-red px-7 py-[15px] text-[15px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
         >
           Back to Axis
         </Link>

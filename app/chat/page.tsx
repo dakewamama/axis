@@ -210,13 +210,13 @@ function ChatThread() {
             }}
             placeholder="Ask Axis anything"
             aria-label="Message Axis"
-            className="h-12 flex-1 rounded-full bg-white px-[18px] text-[15px] text-ink shadow-[0_1px_2px_rgb(32_30_29_/_0.1),0_6px_16px_-10px_rgb(32_30_29_/_0.22)] outline-none placeholder:text-faint focus-visible:ring-2 focus-visible:ring-ink"
+            className="h-12 flex-1 rounded-full bg-white px-[18px] text-[16px] text-ink shadow-[0_1px_2px_rgb(32_30_29_/_0.1),0_6px_16px_-10px_rgb(32_30_29_/_0.22)] outline-none placeholder:text-faint focus-visible:ring-2 focus-visible:ring-ink"
           />
           <button
             onClick={submitDraft}
             disabled={!draft.trim()}
             aria-label="Send"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-deep text-[19px] text-white transition-all hover:bg-red-dark disabled:opacity-30 focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red text-[19px] text-white transition-all hover:bg-red-dark disabled:opacity-30 focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
           >
             &rarr;
           </button>
@@ -248,7 +248,7 @@ function CardView({
           href={card.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="ml-1 inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2.5 text-[13px] font-bold text-cream transition-colors hover:bg-red-deep focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
+          className="ml-1 inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2.5 text-[13px] font-bold text-cream transition-colors hover:bg-red focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
         >
           {card.label ?? "Open"} <span aria-hidden="true">↗</span>
         </a>

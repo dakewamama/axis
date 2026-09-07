@@ -69,7 +69,7 @@ export default function ServicesPage() {
                   setRequested(false);
                 }}
                 placeholder="e.g. my school fees portal"
-                className="mb-2.5 h-[46px] w-full rounded-full bg-field px-4 text-sm text-ink outline-none placeholder:text-faint"
+                className="mb-2.5 h-[46px] w-full rounded-full bg-field px-4 text-[16px] text-ink outline-none placeholder:text-faint"
               />
               <button
                 onClick={() => request.trim() && setRequested(true)}
@@ -88,7 +88,7 @@ export default function ServicesPage() {
           </span>
           <button
             onClick={() => router.push("/home")}
-            className="rounded-full bg-red-deep px-7 py-[15px] text-[15px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark"
+            className="rounded-full bg-red px-7 py-[15px] text-[15px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark"
           >
             Done
           </button>

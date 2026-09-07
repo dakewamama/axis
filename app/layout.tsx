@@ -45,6 +45,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#f7f5f2",
   viewportFit: "cover",
+  // Resize the layout when the on-screen keyboard opens so the fixed bottom
+  // input stays visible instead of being covered.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

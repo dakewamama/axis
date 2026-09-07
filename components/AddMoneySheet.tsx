@@ -247,7 +247,7 @@ function ApproveView({ owner, onBack }: { owner: string; onBack: () => void }) {
         <button
           onClick={approve}
           disabled={busy}
-          className="mt-4 w-full rounded-full bg-red-deep py-[17px] text-[15.5px] font-bold text-white transition-colors hover:bg-red-dark disabled:opacity-40"
+          className="mt-4 w-full rounded-full bg-red py-[17px] text-[15.5px] font-bold text-white transition-colors hover:bg-red-dark disabled:opacity-40"
         >
           Approve ${amount} USDC in wallet
         </button>

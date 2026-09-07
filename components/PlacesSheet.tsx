@@ -137,7 +137,7 @@ export function PlacesSheet({
               onKeyDown={(e) => e.key === "Enter" && save()}
               placeholder="Street, area, landmark"
               autoFocus
-              className="w-full rounded-xl bg-field px-3.5 py-3 text-[15px] text-ink outline-none transition-shadow focus:ring-2 focus:ring-ink/15 placeholder:text-unfilled"
+              className="w-full rounded-xl bg-field px-3.5 py-3 text-[16px] text-ink outline-none transition-shadow focus:ring-2 focus:ring-ink/15 placeholder:text-unfilled"
             />
             <div className="mt-3 flex gap-2">
               <button
@@ -152,7 +152,7 @@ export function PlacesSheet({
               <button
                 onClick={save}
                 disabled={!draft.trim()}
-                className="flex-1 rounded-full bg-red-deep py-3 text-sm font-bold text-white transition-colors hover:bg-red-dark disabled:opacity-40"
+                className="flex-1 rounded-full bg-red py-3 text-sm font-bold text-white transition-colors hover:bg-red-dark disabled:opacity-40"
               >
                 Save address
               </button>

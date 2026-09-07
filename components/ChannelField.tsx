@@ -41,7 +41,7 @@ export function ChannelField({
             autoComplete={autoComplete}
             autoCapitalize={lowercase ? "none" : undefined}
             autoCorrect={lowercase ? "off" : undefined}
-            className="w-full bg-transparent text-[15px] font-semibold text-ink outline-none placeholder:font-normal placeholder:text-unfilled"
+            className="w-full bg-transparent text-[16px] font-semibold text-ink outline-none placeholder:font-normal placeholder:text-unfilled"
           />
         </div>
         <p className="mt-2 text-[11px] leading-[1.4] text-faint">{hint}</p>

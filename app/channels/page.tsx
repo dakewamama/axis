@@ -56,7 +56,7 @@ export default function ChannelsPage() {
                     onClick={() => !locked && toggleChannel(i)}
                     badge={
                       c.kind === "primary" ? (
-                        <span className="shrink-0 rounded-full bg-red-deep px-2 py-1 text-[9px] font-extrabold tracking-[0.07em] text-white uppercase">
+                        <span className="shrink-0 rounded-full bg-red px-2 py-1 text-[9px] font-extrabold tracking-[0.07em] text-white uppercase">
                           Default
                         </span>
                       ) : c.kind === "soon" ? (
@@ -114,7 +114,7 @@ export default function ChannelsPage() {
         <div className="shrink-0 bg-cream px-6 pt-3.5 pb-4 shadow-[0_-1px_0_var(--color-line)]">
           <button
             onClick={() => router.push("/home")}
-            className="w-full rounded-full bg-red-deep py-[17px] text-[15.5px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark"
+            className="w-full rounded-full bg-red py-[17px] text-[15.5px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark"
           >
             Finish setup
           </button>
