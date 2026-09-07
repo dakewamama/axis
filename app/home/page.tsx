@@ -14,9 +14,9 @@ import { NGN, relativeDay } from "@/lib/format";
 
 const EXAMPLES = [
   "does nadia have chicken wings",
-  "cheapest ride to yaba right now",
-  "₦2k airtime on my 0803 line",
-  "pay my Ikeja Electric bill",
+  "send suya to my mum in surulere",
+  "order jollof for two",
+  "buy an oraimo powerbank",
 ];
 
 export default function HomePage() {
@@ -102,7 +102,7 @@ export default function HomePage() {
             />
             <div className="flex items-center justify-between pt-1 pl-3">
               <span className="text-[11px] text-faint">
-                Food · rides · bills · money
+                Food · gifts · shopping
               </span>
               <button
                 onClick={() => ask(draft)}

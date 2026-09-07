@@ -34,7 +34,9 @@ export function Bubble({
         <div className="text-[14.5px] leading-[1.5] whitespace-pre-line text-pretty">
           {text}
         </div>
-        <div className="mt-1.5 text-right text-[10px] opacity-50">{time}</div>
+        {time && (
+          <div className="mt-1.5 text-right text-[10px] opacity-50">{time}</div>
+        )}
       </div>
     </div>
   );

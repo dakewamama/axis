@@ -13,7 +13,16 @@ type Persisted = {
   channels: number[];
   whatsapp: string;
   telegram: string;
+  webUserId: string;
 };
+
+function newWebUserId(): string {
+  try {
+    return `web_${crypto.randomUUID()}`;
+  } catch {
+    return `web_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+  }
+}
 
 type OnboardingState = {
   hydrated: boolean;
@@ -29,6 +38,7 @@ type OnboardingState = {
   setWhatsapp: (value: string) => void;
   telegram: string;
   setTelegram: (value: string) => void;
+  webUserId: string;
   reset: () => void;
 };
 
@@ -48,6 +58,7 @@ export function OnboardingProvider({
   const [channels, setChannels] = useState<Set<number>>(() => new Set([0, 1]));
   const [whatsapp, setWhatsapp] = useState("");
   const [telegram, setTelegram] = useState("");
+  const [webUserId, setWebUserId] = useState("");
 
   useEffect(() => {
     try {
@@ -60,9 +71,17 @@ export function OnboardingProvider({
         if (Array.isArray(p.channels)) setChannels(new Set(p.channels));
         if (typeof p.whatsapp === "string") setWhatsapp(p.whatsapp);
         if (typeof p.telegram === "string") setTelegram(p.telegram);
+        setWebUserId(
+          typeof p.webUserId === "string" && p.webUserId
+            ? p.webUserId
+            : newWebUserId(),
+        );
+      } else {
+        setWebUserId(newWebUserId());
       }
     } catch {
       // corrupt or unavailable storage — fall through to defaults
+      setWebUserId(newWebUserId());
     }
     setHydrated(true);
   }, []);
@@ -77,12 +96,22 @@ export function OnboardingProvider({
         channels: [...channels],
         whatsapp,
         telegram,
+        webUserId,
       };
       sessionStorage.setItem(KEY, JSON.stringify(payload));
     } catch {
       // storage full or blocked
     }
-  }, [hydrated, name, authMethod, services, channels, whatsapp, telegram]);
+  }, [
+    hydrated,
+    name,
+    authMethod,
+    services,
+    channels,
+    whatsapp,
+    telegram,
+    webUserId,
+  ]);
 
   const toggle =
     (setter: React.Dispatch<React.SetStateAction<Set<number>>>) =>
@@ -106,6 +135,7 @@ export function OnboardingProvider({
     setChannels(new Set([0, 1]));
     setWhatsapp("");
     setTelegram("");
+    setWebUserId(newWebUserId());
   }
 
   return (
@@ -124,6 +154,7 @@ export function OnboardingProvider({
         setWhatsapp,
         telegram,
         setTelegram,
+        webUserId,
         reset,
       }}
     >
