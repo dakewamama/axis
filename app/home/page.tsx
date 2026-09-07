@@ -4,12 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { AxisGlyph } from "@/components/AxisMark";
-import { PlacesSheet } from "@/components/PlacesSheet";
 import { AddMoneySheet } from "@/components/AddMoneySheet";
+import { PlacesSheet } from "@/components/PlacesSheet";
 import { useOnboarding } from "@/components/OnboardingProvider";
 import { useWallet } from "@/components/WalletProvider";
 import { useLocation } from "@/components/LocationProvider";
-import { NGN } from "@/lib/format";
+import { NGN, relativeDay } from "@/lib/format";
 
 const EXAMPLES = [
   "does nadia have chicken wings",
@@ -18,17 +18,10 @@ const EXAMPLES = [
   "pay my Ikeja Electric bill",
 ];
 
-const LEDGER = [
-  { label: "Nadia's Kitchen", when: "Yesterday", amount: -6700 },
-  { label: "Ride to Yaba", when: "Tuesday", amount: -1850 },
-  { label: "Wallet top-up", when: "Tuesday", amount: 10000 },
-  { label: "MTN airtime", when: "Monday", amount: -1000 },
-];
-
 export default function HomePage() {
   const router = useRouter();
-  const { name } = useOnboarding();
-  const { balance, axisAddress } = useWallet();
+  const { name, reset } = useOnboarding();
+  const { balance, usdc, live, transactions, axisAddress } = useWallet();
   const { activeLabel } = useLocation();
   const [draft, setDraft] = useState("");
   const [topUpOpen, setTopUpOpen] = useState(false);
@@ -42,28 +35,36 @@ export default function HomePage() {
 
   return (
     <PhoneFrame>
-      <div className="flex flex-1 animate-rise flex-col overflow-hidden">
+      <main className="flex flex-1 animate-rise flex-col overflow-hidden">
         <div className="flex shrink-0 items-center gap-2 px-5 pt-4 pb-2">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-ink">
+          <span
+            aria-hidden="true"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-ink"
+          >
             <AxisGlyph size={18} />
           </span>
           <button
             onClick={() => setPlacesOpen(true)}
-            className="flex min-w-0 items-center gap-1.5 rounded-full px-2 py-1.5 transition-colors hover:bg-white"
+            className="flex min-w-0 items-center gap-1.5 rounded-full px-2 py-1.5 transition-colors hover:bg-white focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
           >
             <span className="truncate text-[13px] font-semibold text-muted">
               {activeLabel}
             </span>
-            <span className="shrink-0 text-[9px] text-faint">▼</span>
+            <span aria-hidden="true" className="shrink-0 text-[9px] text-faint">
+              ▼
+            </span>
           </button>
           <button
             onClick={() => setTopUpOpen(true)}
-            className="ml-auto flex shrink-0 items-center gap-2 rounded-full bg-white py-2 pr-2 pl-3.5 shadow-card transition-colors hover:bg-red-tint"
+            className="ml-auto flex shrink-0 items-center gap-2 rounded-full bg-white py-2 pr-2 pl-3.5 shadow-card transition-colors hover:bg-red-tint focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
           >
             <span className="font-display text-[15px] font-extrabold tracking-[-0.01em] text-ink">
-              {NGN(balance)}
+              {live ? (usdc === null ? "—" : `$${usdc}`) : NGN(balance)}
             </span>
-            <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-red text-[15px] leading-none font-bold text-white">
+            <span
+              aria-hidden="true"
+              className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-red text-[15px] leading-none font-bold text-white"
+            >
               +
             </span>
           </button>
@@ -72,7 +73,9 @@ export default function HomePage() {
         <div className="min-h-0 flex-1 overflow-y-auto px-5">
           <div className="pt-8 pb-5">
             <h2 className="font-display text-[38px] leading-[1.02] font-extrabold tracking-[-0.03em] text-balance text-ink">
-              {firstName ? `What do you need, ${firstName}?` : "What do you need?"}
+              {firstName
+                ? `What do you need, ${firstName}?`
+                : "What do you need?"}
             </h2>
           </div>
 
@@ -92,6 +95,7 @@ export default function HomePage() {
               }}
               rows={1}
               placeholder="Type it like you'd say it…"
+              aria-label="Ask Axis"
               className="w-full resize-none bg-transparent px-3 pt-3 pb-1 text-[16px] leading-[1.45] text-ink outline-none placeholder:text-unfilled"
             />
             <div className="flex items-center justify-between pt-1 pl-3">
@@ -101,7 +105,7 @@ export default function HomePage() {
               <button
                 onClick={() => ask(draft)}
                 disabled={!draft.trim()}
-                aria-label="Ask Axis"
+                aria-label="Send"
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink text-lg text-white transition-all hover:bg-red disabled:opacity-25"
               >
                 &rarr;
@@ -114,9 +118,12 @@ export default function HomePage() {
               <button
                 key={e}
                 onClick={() => ask(e)}
-                className="group flex items-center gap-2.5 rounded-full py-1.5 text-left transition-colors"
+                className="group flex items-center gap-2.5 rounded-full py-1.5 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
               >
-                <span className="h-[5px] w-[5px] shrink-0 rounded-full bg-unfilled transition-colors group-hover:bg-red" />
+                <span
+                  aria-hidden="true"
+                  className="h-[5px] w-[5px] shrink-0 rounded-full bg-unfilled transition-colors group-hover:bg-red"
+                />
                 <span className="text-[14px] text-muted transition-colors group-hover:text-ink">
                   {e}
                 </span>
@@ -126,45 +133,57 @@ export default function HomePage() {
 
           <div className="mt-9 mb-1 flex items-baseline justify-between">
             <span className="text-[10px] font-bold tracking-[0.1em] text-faint uppercase">
-              This week
+              Activity
             </span>
-            <span className="text-[11px] text-faint">4 orders</span>
+            <span className="text-[11px] text-faint">
+              {transactions.length}{" "}
+              {transactions.length === 1 ? "entry" : "entries"}
+            </span>
           </div>
-          <div className="pb-8">
-            {LEDGER.map((l) => (
+          <div>
+            {transactions.slice(0, 8).map((t) => (
               <div
-                key={l.label}
+                key={t.id}
                 className="flex items-baseline justify-between gap-3 border-b border-line py-3.5 last:border-0"
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14px] font-semibold text-ink">
-                    {l.label}
+                    {t.label}
                   </span>
                   <span className="mt-0.5 block text-[11px] text-faint">
-                    {l.when}
+                    {relativeDay(t.at)}
                   </span>
                 </span>
                 <span
                   className={`text-[14px] font-bold whitespace-nowrap ${
-                    l.amount > 0 ? "text-red-deep" : "text-ink"
+                    t.amount > 0 ? "text-red-deep" : "text-ink"
                   }`}
                 >
-                  {l.amount > 0 ? "+" : "−"}
-                  {NGN(Math.abs(l.amount))}
+                  {t.amount > 0 ? "+" : "−"}
+                  {NGN(Math.abs(t.amount))}
                 </span>
               </div>
             ))}
           </div>
+
+          <button
+            onClick={() => {
+              reset();
+              router.replace("/");
+            }}
+            className="mt-6 mb-8 w-full rounded-full py-3 text-[12.5px] font-semibold text-faint transition-colors hover:bg-line hover:text-ink"
+          >
+            Start over
+          </button>
         </div>
 
         <PlacesSheet open={placesOpen} onClose={() => setPlacesOpen(false)} />
-
         <AddMoneySheet
           open={topUpOpen}
           onClose={() => setTopUpOpen(false)}
           axisAddress={axisAddress}
         />
-      </div>
+      </main>
     </PhoneFrame>
   );
 }

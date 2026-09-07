@@ -1,16 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Sheet } from "@/components/Sheet";
 import {
   getDepositAddress,
-  getFundingBalance,
   buildTransfer,
   fundingConfigured,
   type DepositAddress,
 } from "@/lib/funding";
 import { connectWallet, approveTransfer } from "@/lib/solanaWallet";
+import { useWallet } from "@/components/WalletProvider";
 
 type Mode = "choose" | "deposit" | "approve";
 
@@ -118,7 +118,7 @@ function DepositView({ owner, onBack }: { owner: string; onBack: () => void }) {
   const [addr, setAddr] = useState<DepositAddress | null>(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
-  const credited = useCreditedBalance(owner);
+  const { usdc: credited } = useWallet();
 
   useEffect(() => {
     let alive = true;
@@ -178,7 +178,7 @@ function ApproveView({ owner, onBack }: { owner: string; onBack: () => void }) {
   const [status, setStatus] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const credited = useCreditedBalance(owner);
+  const { usdc: credited } = useWallet();
 
   async function connect() {
     setError("");

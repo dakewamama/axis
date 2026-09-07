@@ -146,18 +146,21 @@ function ChatThread() {
   }
 
   function payFood() {
-    charge(total);
+    charge(total, dish?.name ?? "Order");
     setSheetOpen(false);
     setPaid(true);
   }
 
   function bookRide() {
-    charge(cheapestRide.price);
+    charge(cheapestRide.price, `Ride · ${cheapestRide.app}`);
     setBooked(true);
   }
 
   function settleUtility() {
-    charge(utility.amount);
+    charge(
+      utility.amount,
+      intent === "airtime" ? "Airtime top-up" : "Electricity bill",
+    );
     setSettled(true);
   }
 
