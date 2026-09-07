@@ -9,6 +9,7 @@ import { PlacesSheet } from "@/components/PlacesSheet";
 import { useOnboarding } from "@/components/OnboardingProvider";
 import { useWallet } from "@/components/WalletProvider";
 import { useLocation } from "@/components/LocationProvider";
+import { useGuard } from "@/components/useGuard";
 import { NGN, relativeDay } from "@/lib/format";
 
 const EXAMPLES = [
@@ -20,6 +21,7 @@ const EXAMPLES = [
 
 export default function HomePage() {
   const router = useRouter();
+  useGuard("complete");
   const { name, reset } = useOnboarding();
   const { activeLabel, reset: resetLocation } = useLocation();
   const { balance, usdc, live, entries, axisAddress } = useWallet();

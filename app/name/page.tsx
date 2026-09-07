@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { StepBadge } from "@/components/StepBadge";
 import { useOnboarding } from "@/components/OnboardingProvider";
+import { useGuard } from "@/components/useGuard";
 
 export default function NamePage() {
   const router = useRouter();
   const { name, setName } = useOnboarding();
+  useGuard("authed");
 
   const trimmed = name.trim();
 
@@ -48,7 +50,7 @@ export default function NamePage() {
 
         <div className="mt-auto flex gap-2.5">
           <button
-            onClick={() => router.push("/auth")}
+            onClick={() => router.back()}
             className="rounded-full bg-white px-6 py-[17px] text-[14.5px] font-semibold text-ink shadow-card transition-colors hover:bg-line"
           >
             Back

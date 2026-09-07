@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { SelectRow } from "@/components/SelectRow";
 import { useOnboarding } from "@/components/OnboardingProvider";
+import { useGuard } from "@/components/useGuard";
 import { VERTICALS } from "@/lib/data";
 
 export default function ServicesPage() {
   const router = useRouter();
+  useGuard("complete");
   const { services, toggleService } = useOnboarding();
   const [request, setRequest] = useState("");
   const [requested, setRequested] = useState(false);

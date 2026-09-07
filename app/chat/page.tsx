@@ -11,6 +11,7 @@ import { UpsellCard } from "@/components/chat/UpsellCard";
 import { RideCard } from "@/components/chat/RideCard";
 import { PayConfirmCard } from "@/components/chat/PayConfirmCard";
 import { useOnboarding } from "@/components/OnboardingProvider";
+import { useGuard } from "@/components/useGuard";
 import { useWallet } from "@/components/WalletProvider";
 import {
   DISHES,
@@ -58,6 +59,7 @@ function ChatThread() {
   const router = useRouter();
   const params = useSearchParams();
   const seed = params.get("q");
+  useGuard("complete", { preserveQuery: true });
 
   const { name } = useOnboarding();
   const { balance, charge } = useWallet();

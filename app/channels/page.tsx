@@ -6,11 +6,13 @@ import { StepBadge } from "@/components/StepBadge";
 import { SelectRow } from "@/components/SelectRow";
 import { ChannelField } from "@/components/ChannelField";
 import { useOnboarding } from "@/components/OnboardingProvider";
+import { useGuard } from "@/components/useGuard";
 import { CHANNELS } from "@/lib/data";
 import { formatPhone } from "@/lib/format";
 
 export default function ChannelsPage() {
   const router = useRouter();
+  useGuard("named");
   const {
     channels,
     toggleChannel,
