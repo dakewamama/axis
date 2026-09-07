@@ -178,16 +178,24 @@ export default function HomePage() {
             )}
           </div>
 
-          <button
-            onClick={() => {
-              reset();
-              resetLocation();
-              router.replace("/");
-            }}
-            className="mt-6 mb-8 w-full rounded-full py-3 text-[12.5px] font-semibold text-faint transition-colors hover:bg-line hover:text-ink"
-          >
-            Start over
-          </button>
+          <div className="mt-6 mb-8 flex flex-col gap-1.5">
+            <button
+              onClick={() => router.push("/services")}
+              className="w-full rounded-full py-3 text-[12.5px] font-semibold text-muted transition-colors hover:bg-line hover:text-ink"
+            >
+              Manage services
+            </button>
+            <button
+              onClick={() => {
+                reset();
+                resetLocation();
+                router.replace("/");
+              }}
+              className="w-full rounded-full py-3 text-[12.5px] font-semibold text-faint transition-colors hover:bg-line hover:text-ink"
+            >
+              Start over
+            </button>
+          </div>
         </div>
 
         <PlacesSheet open={placesOpen} onClose={() => setPlacesOpen(false)} />

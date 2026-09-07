@@ -24,7 +24,7 @@ export default function ChannelsPage() {
     <PhoneFrame>
       <div className="flex min-h-0 flex-1 animate-rise flex-col overflow-hidden">
         <div className="px-6 pt-7 pb-4">
-          <StepBadge step={4} />
+          <StepBadge step={3} />
           <h2 className="mt-3.5 mb-2 font-display text-[32px] leading-[1.02] font-extrabold tracking-[-0.02em] text-ink">
             Where do you want to reach Axis?
           </h2>

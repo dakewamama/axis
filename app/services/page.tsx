@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
-import { StepBadge } from "@/components/StepBadge";
 import { SelectRow } from "@/components/SelectRow";
 import { useOnboarding } from "@/components/OnboardingProvider";
 import { VERTICALS } from "@/lib/data";
@@ -18,8 +17,13 @@ export default function ServicesPage() {
     <PhoneFrame>
       <div className="flex flex-1 animate-rise flex-col overflow-hidden">
         <div className="px-6 pt-7 pb-4">
-          <StepBadge step={3} />
-          <h2 className="mt-3.5 mb-2 font-display text-[32px] leading-[1.02] font-extrabold tracking-[-0.02em] text-ink">
+          <button
+            onClick={() => router.push("/home")}
+            className="mb-3 inline-flex items-center gap-1 text-[13px] font-semibold text-muted transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
+          >
+            <span aria-hidden="true">&larr;</span> Home
+          </button>
+          <h2 className="mb-2 font-display text-[32px] leading-[1.02] font-extrabold tracking-[-0.02em] text-ink">
             Pick what you&rsquo;ll actually use.
           </h2>
           <p className="text-[13px] leading-[1.5] text-faint">
@@ -81,10 +85,10 @@ export default function ServicesPage() {
             {services.size} selected
           </span>
           <button
-            onClick={() => router.push("/channels")}
+            onClick={() => router.push("/home")}
             className="rounded-full bg-red px-7 py-[15px] text-[15px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark"
           >
-            Continue
+            Done
           </button>
         </div>
       </div>

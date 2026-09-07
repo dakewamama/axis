@@ -12,7 +12,7 @@ export default function NamePage() {
   const trimmed = name.trim();
 
   function advance() {
-    if (trimmed) router.push("/services");
+    if (trimmed) router.push("/channels");
   }
 
   return (
