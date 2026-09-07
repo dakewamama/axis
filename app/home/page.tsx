@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { AxisGlyph } from "@/components/AxisMark";
@@ -10,19 +10,13 @@ import { useOnboarding } from "@/components/OnboardingProvider";
 import { useWallet } from "@/components/WalletProvider";
 import { useLocation } from "@/components/LocationProvider";
 import { useGuard } from "@/components/useGuard";
+import { HOME_SHORTCUTS } from "@/lib/data";
 import { NGN, relativeDay } from "@/lib/format";
-
-const EXAMPLES = [
-  "does nadia have chicken wings",
-  "send suya to my mum in surulere",
-  "order jollof for two",
-  "buy an oraimo powerbank",
-];
 
 export default function HomePage() {
   const router = useRouter();
   useGuard("complete");
-  const { name, reset } = useOnboarding();
+  const { name, services, reset } = useOnboarding();
   const { activeLabel, reset: resetLocation } = useLocation();
   const { balance, usdc, live, entries, axisAddress } = useWallet();
   const [draft, setDraft] = useState("");
@@ -30,6 +24,15 @@ export default function HomePage() {
   const [placesOpen, setPlacesOpen] = useState(false);
 
   const firstName = name.trim();
+
+  // Shortcuts the user opted into (in onboarding /services) float to the front.
+  const examples = useMemo(() => {
+    const picked = (s: { vertical?: number }) =>
+      s.vertical === undefined || services.has(s.vertical);
+    return [...HOME_SHORTCUTS]
+      .sort((a, b) => Number(picked(b)) - Number(picked(a)))
+      .map((s) => s.prompt);
+  }, [services]);
 
   function ask(text: string) {
     if (text.trim()) router.push(`/chat?q=${encodeURIComponent(text.trim())}`);
@@ -116,7 +119,7 @@ export default function HomePage() {
           </div>
 
           <div className="mt-5 flex flex-col gap-1.5">
-            {EXAMPLES.map((e) => (
+            {examples.map((e) => (
               <button
                 key={e}
                 onClick={() => ask(e)}

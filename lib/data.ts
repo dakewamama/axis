@@ -16,6 +16,18 @@ export const VERTICALS: Vertical[] = [
   { label: "Pharmacy & health", note: "Prescriptions and refills", waitlist: true },
 ];
 
+// Home suggestion chips. `vertical` (index into VERTICALS) lets /home float the
+// chips for services the user actually selected in onboarding to the front. Chips
+// with no vertical (e.g. shopping) are always available.
+export type Shortcut = { prompt: string; vertical?: number };
+
+export const HOME_SHORTCUTS: Shortcut[] = [
+  { prompt: "does nadia have chicken wings", vertical: 0 }, // Food delivery
+  { prompt: "send suya to my mum in surulere", vertical: 3 }, // Send a package
+  { prompt: "order jollof for two", vertical: 0 },
+  { prompt: "buy an oraimo powerbank" }, // shopping
+];
+
 export type Channel = {
   label: string;
   note: string;

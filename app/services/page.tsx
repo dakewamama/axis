@@ -7,11 +7,19 @@ import { SelectRow } from "@/components/SelectRow";
 import { useOnboarding } from "@/components/OnboardingProvider";
 import { useGuard } from "@/components/useGuard";
 import { VERTICALS } from "@/lib/data";
+import { formatPhone } from "@/lib/format";
+
+const AUTH_LABEL: Record<string, string> = {
+  google: "Google",
+  apple: "Apple",
+  phone: "Phone number",
+};
 
 export default function ServicesPage() {
   const router = useRouter();
   useGuard("complete");
-  const { services, toggleService } = useOnboarding();
+  const { services, toggleService, authMethod, whatsapp, telegram } =
+    useOnboarding();
   const [request, setRequest] = useState("");
   const [requested, setRequested] = useState(false);
 
@@ -34,6 +42,38 @@ export default function ServicesPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-6">
+          <div className="mb-4 rounded-[22px] bg-white p-[18px] shadow-card">
+            <div className="mb-3 text-[10px] font-bold tracking-[0.09em] text-faint uppercase">
+              Account &amp; reach
+            </div>
+            <dl className="flex flex-col gap-2.5 text-[13.5px]">
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-faint">Signed in with</dt>
+                <dd className="font-semibold text-ink">
+                  {authMethod ? AUTH_LABEL[authMethod] : "—"}
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-faint">WhatsApp</dt>
+                <dd className="font-semibold text-ink">
+                  {whatsapp ? `+234 ${formatPhone(whatsapp)}` : "Not added"}
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-faint">Telegram</dt>
+                <dd className="font-semibold text-ink">
+                  {telegram ? `@${telegram}` : "Not added"}
+                </dd>
+              </div>
+            </dl>
+            <button
+              onClick={() => router.push("/channels")}
+              className="mt-3.5 w-full rounded-full bg-line py-2.5 text-[13px] font-bold text-ink transition-colors hover:bg-red-tint focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
+            >
+              Manage channels
+            </button>
+          </div>
+
           <div className="flex flex-col gap-2.5">
             {VERTICALS.map((v, i) => (
               <SelectRow
