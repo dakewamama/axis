@@ -253,29 +253,6 @@ function ApproveView({ owner, onBack }: { owner: string; onBack: () => void }) {
   );
 }
 
-// Polls the durably-credited backend balance while the sheet view is mounted, so
-// the UI reflects a real on-chain credit and never a client-side assertion.
-function useCreditedBalance(owner: string): string | null {
-  const [usdc, setUsdc] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const poll = useCallback(() => {
-    getFundingBalance(owner)
-      .then((b) => setUsdc(b.usdc))
-      .catch(() => {});
-  }, [owner]);
-
-  useEffect(() => {
-    poll();
-    timer.current = setInterval(poll, 8000);
-    return () => {
-      if (timer.current) clearInterval(timer.current);
-    };
-  }, [poll]);
-
-  return usdc;
-}
-
 function CreditedRow({ credited }: { credited: string | null }) {
   if (credited === null) return null;
   return (

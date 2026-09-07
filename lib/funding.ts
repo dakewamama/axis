@@ -27,6 +27,22 @@ export interface BuiltTransfer {
   mint: string;
 }
 
+/**
+ * One backend-confirmed on-chain deposit. The payments service converts base
+ * units to `usdc` (a canonical decimal string) server-side, so the client never
+ * does float money math — it displays this string verbatim.
+ */
+export interface CreditRecord {
+  signature: string;
+  usdc: string; // canonical decimal string, already converted server-side
+  at: string; // ISO timestamp of crediting
+}
+
+export interface DepositsResponse {
+  owner: string;
+  deposits: CreditRecord[];
+}
+
 function base(): string {
   if (!API) {
     throw new Error(
@@ -67,6 +83,11 @@ export function getDepositAddress(owner: string): Promise<DepositAddress> {
 /** Durably-credited USDC balance for the user's Axis wallet. */
 export function getFundingBalance(owner: string): Promise<FundingBalance> {
   return get<FundingBalance>(`/funding/balance?owner=${encodeURIComponent(owner)}`);
+}
+
+/** Backend-confirmed on-chain deposit history, newest first. */
+export function getDeposits(owner: string): Promise<DepositsResponse> {
+  return get<DepositsResponse>(`/funding/deposits?owner=${encodeURIComponent(owner)}`);
 }
 
 /** Build an UNSIGNED USDC transfer for the user's wallet to approve. */

@@ -21,8 +21,8 @@ const EXAMPLES = [
 export default function HomePage() {
   const router = useRouter();
   const { name, reset } = useOnboarding();
-  const { balance, usdc, live, transactions, axisAddress } = useWallet();
   const { activeLabel } = useLocation();
+  const { balance, usdc, live, entries, axisAddress } = useWallet();
   const [draft, setDraft] = useState("");
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [placesOpen, setPlacesOpen] = useState(false);
@@ -136,34 +136,46 @@ export default function HomePage() {
               Activity
             </span>
             <span className="text-[11px] text-faint">
-              {transactions.length}{" "}
-              {transactions.length === 1 ? "entry" : "entries"}
+              {entries.length} {entries.length === 1 ? "entry" : "entries"}
             </span>
           </div>
           <div>
-            {transactions.slice(0, 8).map((t) => (
-              <div
-                key={t.id}
-                className="flex items-baseline justify-between gap-3 border-b border-line py-3.5 last:border-0"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14px] font-semibold text-ink">
-                    {t.label}
-                  </span>
-                  <span className="mt-0.5 block text-[11px] text-faint">
-                    {relativeDay(t.at)}
-                  </span>
-                </span>
-                <span
-                  className={`text-[14px] font-bold whitespace-nowrap ${
-                    t.amount > 0 ? "text-red-deep" : "text-ink"
-                  }`}
+            {entries.length === 0 ? (
+              <p className="py-6 text-center text-[13px] text-faint">
+                Nothing here yet. Add money or make a request to get started.
+              </p>
+            ) : (
+              entries.slice(0, 8).map((t) => (
+                <div
+                  key={t.id}
+                  className="flex items-baseline justify-between gap-3 border-b border-line py-3.5 last:border-0"
                 >
-                  {t.amount > 0 ? "+" : "−"}
-                  {NGN(Math.abs(t.amount))}
-                </span>
-              </div>
-            ))}
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate text-[14px] font-semibold text-ink">
+                        {t.label}
+                      </span>
+                      {!t.confirmed && (
+                        <span className="shrink-0 rounded-full bg-line px-1.5 py-0.5 text-[9px] font-bold tracking-[0.06em] text-faint uppercase">
+                          Demo
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] text-faint">
+                      {relativeDay(t.at)}
+                    </span>
+                  </span>
+                  <span
+                    className={`text-[14px] font-bold whitespace-nowrap ${
+                      t.positive ? "text-red-deep" : "text-ink"
+                    }`}
+                  >
+                    {t.positive ? "+" : "−"}
+                    {t.display}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
 
           <button
