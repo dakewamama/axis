@@ -48,11 +48,9 @@ const METHODS = [
   {
     id: "google" as const,
     label: "Continue with Google",
-    icon: (
-      <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg bg-line font-display text-[15px] font-extrabold">
-        G
-      </span>
-    ),
+    // No fake "G" mark — a non-official Google glyph fails brand review. Use the
+    // official asset here when available; until then the label carries it.
+    icon: null,
   },
   { id: "apple" as const, label: "Continue with Apple", icon: <AppleIcon /> },
   { id: "phone" as const, label: "Use my phone number", icon: <PhoneIcon /> },
@@ -75,29 +73,38 @@ export default function AuthPage() {
           Sign in once.
         </h2>
         <p className="mt-3 mb-6 text-sm leading-[1.5] text-pretty text-muted">
-          No forms, no BVN, no seed phrase. Signing in creates your Axis wallet
-          in the background &mdash; it&rsquo;s how you pay for things later.
+          No forms, no seed phrase. Signing in creates your Axis wallet in the
+          background. It&rsquo;s how you pay for things later.
         </p>
 
-        <div className="flex flex-col gap-2.5">
+        <div
+          role="group"
+          aria-label="Sign-in options"
+          className="flex flex-col gap-2.5"
+        >
           {METHODS.map((m) => (
             <button
               key={m.id}
               onClick={() => choose(m.id)}
-              className="flex items-center gap-3.5 rounded-[18px] bg-white px-[18px] py-[17px] text-left text-[15.5px] font-semibold text-ink shadow-card transition-colors hover:bg-red-tint"
+              className="flex items-center gap-3.5 rounded-[18px] bg-white px-[18px] py-[17px] text-left text-[15.5px] font-semibold text-ink shadow-card transition-colors hover:bg-red-tint focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
             >
               {m.icon}
               <span className="flex-1">{m.label}</span>
-              <span className="text-red">&rarr;</span>
+              <span aria-hidden="true" className="text-red-deep">
+                &rarr;
+              </span>
             </button>
           ))}
         </div>
 
         <div className="mt-auto flex items-start gap-2.5 pt-5">
-          <span className="mt-[5px] h-[7px] w-[7px] shrink-0 rounded-full bg-red" />
-          <p className="text-xs leading-[1.5] text-pretty text-faint">
-            Axis never holds your balance. Payments settle on a licensed rail,
-            and your wallet stays yours.
+          <span
+            aria-hidden="true"
+            className="mt-[5px] h-[7px] w-[7px] shrink-0 rounded-full bg-red"
+          />
+          <p className="text-sm leading-[1.5] text-pretty text-muted">
+            Your Axis wallet is created for you and used only to pay for what you
+            ask for. It stays tied to your account.
           </p>
         </div>
       </div>

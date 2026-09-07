@@ -35,7 +35,7 @@ export default function HomePage() {
 
   return (
     <PhoneFrame>
-      <main className="flex flex-1 animate-rise flex-col overflow-hidden">
+      <div className="flex flex-1 animate-rise flex-col overflow-hidden">
         <div className="flex shrink-0 items-center gap-2 px-5 pt-4 pb-2">
           <span
             aria-hidden="true"
@@ -204,7 +204,7 @@ export default function HomePage() {
           onClose={() => setTopUpOpen(false)}
           axisAddress={axisAddress}
         />
-      </main>
+      </div>
     </PhoneFrame>
   );
 }

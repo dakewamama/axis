@@ -24,7 +24,7 @@ export function PayConfirmCard({
       <button
         onClick={onPay}
         disabled={disabled}
-        className="mt-3 w-full rounded-full bg-red py-[15px] text-[14.5px] font-bold text-white transition-colors hover:bg-red-dark disabled:cursor-not-allowed disabled:opacity-40"
+        className="mt-3 w-full rounded-full bg-red-deep py-[15px] text-[14.5px] font-bold text-white transition-colors hover:bg-red-dark disabled:cursor-not-allowed disabled:opacity-40"
       >
         {disabled ? "Insufficient balance" : `Pay ${NGN(amount)}`}
       </button>

@@ -19,7 +19,7 @@ export default function Error({
 
   return (
     <PhoneFrame>
-      <main className="flex flex-1 flex-col items-center justify-center px-8 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
         <AxisMark size={56} radius={18} glyph={32} />
         <h1 className="mt-6 font-display text-[26px] font-extrabold tracking-[-0.02em] text-ink">
           Something broke on our end.
@@ -30,11 +30,11 @@ export default function Error({
         </p>
         <button
           onClick={reset}
-          className="mt-7 rounded-full bg-red px-7 py-[15px] text-[15px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
+          className="mt-7 rounded-full bg-red-deep px-7 py-[15px] text-[15px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
         >
           Try again
         </button>
-      </main>
+      </div>
     </PhoneFrame>
   );
 }

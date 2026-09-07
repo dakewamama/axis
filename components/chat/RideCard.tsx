@@ -52,7 +52,7 @@ export function RideCard({ onBook }: { onBook: () => void }) {
       </div>
       <button
         onClick={onBook}
-        className="mt-3.5 w-full rounded-full bg-red py-[15px] text-[14.5px] font-bold text-white transition-colors hover:bg-red-dark"
+        className="mt-3.5 w-full rounded-full bg-red-deep py-[15px] text-[14.5px] font-bold text-white transition-colors hover:bg-red-dark"
       >
         Book {cheapest.app} · {NGN(cheapest.price)}
       </button>

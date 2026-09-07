@@ -56,7 +56,7 @@ export default function NamePage() {
           <button
             onClick={advance}
             disabled={!trimmed}
-            className="flex-1 rounded-full bg-red py-[17px] text-[15.5px] font-bold text-white shadow-cta transition-all hover:bg-red-dark disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+            className="flex-1 rounded-full bg-red-deep py-[17px] text-[15.5px] font-bold text-white shadow-cta transition-all hover:bg-red-dark disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
           >
             Continue
           </button>

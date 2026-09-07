@@ -86,7 +86,7 @@ export default function ServicesPage() {
           </span>
           <button
             onClick={() => router.push("/home")}
-            className="rounded-full bg-red px-7 py-[15px] text-[15px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark"
+            className="rounded-full bg-red-deep px-7 py-[15px] text-[15px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark"
           >
             Done
           </button>

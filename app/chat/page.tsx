@@ -404,7 +404,7 @@ function ChatThread() {
             <button
               onClick={payFood}
               disabled={total > balance}
-              className="w-full rounded-full bg-red py-[17px] text-[15.5px] font-bold text-white transition-colors hover:bg-red-dark disabled:cursor-not-allowed disabled:opacity-40"
+              className="w-full rounded-full bg-red-deep py-[17px] text-[15.5px] font-bold text-white transition-colors hover:bg-red-dark disabled:cursor-not-allowed disabled:opacity-40"
             >
               {total > balance ? "Insufficient balance" : `Pay ${NGN(total)}`}
             </button>

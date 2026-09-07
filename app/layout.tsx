@@ -55,6 +55,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${manrope.variable} ${inter.variable}`}>
       <body className="font-body text-ink antialiased">
+        <a
+          href="#main-content"
+          className="sr-only rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-deep"
+        >
+          Skip to content
+        </a>
         <OnboardingProvider>
           <WalletProvider>
             <LocationProvider>{children}</LocationProvider>
