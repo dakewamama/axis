@@ -17,10 +17,29 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://axis-two-xi.vercel.app";
+const TITLE = "Axis: stop downloading apps";
+const DESCRIPTION =
+  "One chat to order food, send gifts and shop. Type it like you'd say it.";
+
 export const metadata: Metadata = {
-  title: "Axis — stop downloading apps",
-  description:
-    "One chat that orders food, books rides, pays bills and moves money. Type it like you'd say it.",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  applicationName: "Axis",
+  openGraph: {
+    type: "website",
+    siteName: "Axis",
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export const viewport: Viewport = {
