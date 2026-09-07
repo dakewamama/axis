@@ -21,7 +21,7 @@ const EXAMPLES = [
 export default function HomePage() {
   const router = useRouter();
   const { name, reset } = useOnboarding();
-  const { activeLabel } = useLocation();
+  const { activeLabel, reset: resetLocation } = useLocation();
   const { balance, usdc, live, entries, axisAddress } = useWallet();
   const [draft, setDraft] = useState("");
   const [topUpOpen, setTopUpOpen] = useState(false);
@@ -181,6 +181,7 @@ export default function HomePage() {
           <button
             onClick={() => {
               reset();
+              resetLocation();
               router.replace("/");
             }}
             className="mt-6 mb-8 w-full rounded-full py-3 text-[12.5px] font-semibold text-faint transition-colors hover:bg-line hover:text-ink"
