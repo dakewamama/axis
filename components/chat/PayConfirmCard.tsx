@@ -18,8 +18,7 @@ export function PayConfirmCard({
         {NGN(amount)}
       </div>
       <p className="mt-3 border-t border-line pt-3 text-[11.5px] leading-[1.45] text-pretty text-faint">
-        Confirmed before charge. Debited from your Axis wallet, settled on a
-        licensed rail.
+        Confirmed before charge. Debited from your Axis wallet once you approve.
       </p>
       <button
         onClick={onPay}

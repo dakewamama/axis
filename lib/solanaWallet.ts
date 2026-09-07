@@ -1,6 +1,6 @@
-// Thin bridge to the user's own Solana wallet. Axis NEVER holds the key and NEVER
-// signs: the backend returns an unsigned transaction, the user's wallet signs and
-// submits it, and the backend credits only after that lands on-chain.
+// Thin bridge to the user's own Solana wallet. The private key stays in the
+// user's wallet: the backend returns an unsigned transaction, the user's wallet
+// signs and submits it, and the backend credits only after it lands on-chain.
 //
 // FLAG — wallet API assumption: this targets the injected-provider shape used by
 // Phantom/Solflare (`window.solana.connect()` + `signAndSendTransaction`), which

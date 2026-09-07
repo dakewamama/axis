@@ -46,7 +46,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [deposits, setDeposits] = useState<Entry[]>([]);
   const [local, setLocal] = useState<Entry[]>([]);
 
-  const axisAddress = process.env.NEXT_PUBLIC_AXIS_WALLET_ADDRESS ?? "";
+  // Deliberately NOT sourced from a NEXT_PUBLIC_ env var. A single global
+  // funds-destination shipped to every visitor gives no per-user attribution,
+  // reconciliation, or idempotency. The per-user owner will come from the
+  // server-side session once a real settlement path exists; until then funding
+  // stays inert (live === false) rather than pointing everyone at one address.
+  const axisAddress = "";
   const live = fundingConfigured && Boolean(axisAddress);
 
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);

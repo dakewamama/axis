@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "check:forbidden": "node scripts/check-forbidden.mjs",
+    "prebuild": "node scripts/check-forbidden.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

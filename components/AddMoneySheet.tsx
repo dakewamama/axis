@@ -62,7 +62,7 @@ export function AddMoneySheet({
         </span>
         <span className="mt-1 block text-[12.5px] text-faint">
           Fund your Axis wallet with USDC on Solana. You approve every transfer in
-          your own wallet — Axis never holds your keys.
+          your own wallet before it is sent.
         </span>
       </div>
 
@@ -73,8 +73,8 @@ export function AddMoneySheet({
         </Notice>
       ) : !axisAddress ? (
         <Notice>
-          No Axis wallet address yet. It’s set at sign-in from your custodial
-          wallet (or <code>NEXT_PUBLIC_AXIS_WALLET_ADDRESS</code> in this preview).
+          No Axis wallet address yet. It’s issued server-side from your account
+          when the settlement path is live.
         </Notice>
       ) : mode === "choose" ? (
         <Chooser onPick={setMode} onClose={onClose} />
