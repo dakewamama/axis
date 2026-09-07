@@ -6,6 +6,7 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { AxisGlyph } from "@/components/AxisMark";
 import { AddMoneySheet } from "@/components/AddMoneySheet";
 import { PlacesSheet } from "@/components/PlacesSheet";
+import { SettingsSheet } from "@/components/SettingsSheet";
 import { useOnboarding } from "@/components/OnboardingProvider";
 import { useWallet } from "@/components/WalletProvider";
 import { useLocation } from "@/components/LocationProvider";
@@ -16,12 +17,13 @@ import { NGN, relativeDay } from "@/lib/format";
 export default function HomePage() {
   const router = useRouter();
   useGuard("complete");
-  const { name, services, reset } = useOnboarding();
-  const { activeLabel, reset: resetLocation } = useLocation();
+  const { name, services } = useOnboarding();
+  const { activeLabel } = useLocation();
   const { balance, usdc, live, entries, axisAddress } = useWallet();
   const [draft, setDraft] = useState("");
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [placesOpen, setPlacesOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const firstName = name.trim();
 
@@ -42,12 +44,13 @@ export default function HomePage() {
     <PhoneFrame>
       <div className="flex flex-1 animate-rise flex-col overflow-hidden">
         <div className="flex shrink-0 items-center gap-2 px-5 pt-4 pb-2">
-          <span
-            aria-hidden="true"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-ink"
+          <button
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-ink transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream focus-visible:outline-none"
           >
             <AxisGlyph size={18} />
-          </span>
+          </button>
           <button
             onClick={() => setPlacesOpen(true)}
             className="flex min-w-0 items-center gap-1.5 rounded-full px-2 py-1.5 transition-colors hover:bg-white focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
@@ -183,24 +186,7 @@ export default function HomePage() {
             )}
           </div>
 
-          <div className="mt-6 mb-8 flex flex-col gap-1.5">
-            <button
-              onClick={() => router.push("/services")}
-              className="w-full rounded-full py-3 text-[12.5px] font-semibold text-muted transition-colors hover:bg-line hover:text-ink"
-            >
-              Manage services
-            </button>
-            <button
-              onClick={() => {
-                reset();
-                resetLocation();
-                router.replace("/");
-              }}
-              className="w-full rounded-full py-3 text-[12.5px] font-semibold text-faint transition-colors hover:bg-line hover:text-ink"
-            >
-              Start over
-            </button>
-          </div>
+          <div className="h-8" />
         </div>
 
         <PlacesSheet open={placesOpen} onClose={() => setPlacesOpen(false)} />
@@ -208,6 +194,11 @@ export default function HomePage() {
           open={topUpOpen}
           onClose={() => setTopUpOpen(false)}
           axisAddress={axisAddress}
+        />
+        <SettingsSheet
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          onAddMoney={() => setTopUpOpen(true)}
         />
       </div>
     </PhoneFrame>
