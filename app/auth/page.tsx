@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { StepBadge } from "@/components/StepBadge";
 import { useOnboarding } from "@/components/OnboardingProvider";
+import { SKIP_ONBOARDING } from "@/lib/flags";
 
 function GoogleIcon() {
   return (
@@ -81,6 +83,10 @@ const METHODS = [
 export default function AuthPage() {
   const router = useRouter();
   const { setAuthMethod } = useOnboarding();
+
+  useEffect(() => {
+    if (SKIP_ONBOARDING) router.replace("/home");
+  }, [router]);
 
   function choose(method: (typeof METHODS)[number]["id"]) {
     setAuthMethod(method);

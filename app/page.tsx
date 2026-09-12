@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { AxisMark } from "@/components/AxisMark";
+import { SKIP_ONBOARDING } from "@/lib/flags";
 
 const STATS = [
   { value: "7", label: "Services" },
@@ -9,6 +11,7 @@ const STATS = [
 ];
 
 export default function SplashPage() {
+  if (SKIP_ONBOARDING) redirect("/home");
   return (
     <PhoneFrame>
       <div className="flex flex-1 flex-col justify-between px-6 pt-8 pb-7">

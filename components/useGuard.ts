@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useOnboarding } from "./OnboardingProvider";
+import { SKIP_ONBOARDING } from "@/lib/flags";
 
 type Requirement = "authed" | "named" | "complete";
 
@@ -22,6 +23,7 @@ export function useGuard(
   const { hydrated, authMethod, name } = useOnboarding();
 
   useEffect(() => {
+    if (SKIP_ONBOARDING) return; // test bypass: never redirect
     if (!hydrated) return;
     const authed = authMethod !== null;
     const named = name.trim() !== "";

@@ -1,15 +1,21 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { StepBadge } from "@/components/StepBadge";
 import { useOnboarding } from "@/components/OnboardingProvider";
 import { useGuard } from "@/components/useGuard";
+import { SKIP_ONBOARDING } from "@/lib/flags";
 
 export default function NamePage() {
   const router = useRouter();
   const { name, setName } = useOnboarding();
   useGuard("authed");
+
+  useEffect(() => {
+    if (SKIP_ONBOARDING) router.replace("/home");
+  }, [router]);
 
   const trimmed = name.trim();
 

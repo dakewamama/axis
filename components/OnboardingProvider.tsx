@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { SKIP_ONBOARDING } from "@/lib/flags";
 
 type AuthMethod = "google" | "apple" | "phone";
 
@@ -82,6 +83,12 @@ export function OnboardingProvider({
     } catch {
       // corrupt or unavailable storage — fall through to defaults
       setWebUserId(newWebUserId());
+    }
+    // Test bypass: seed a throwaway identity so onboarding is "complete" and
+    // chat (greeting, userId) works without clicking through the flow.
+    if (SKIP_ONBOARDING) {
+      setAuthMethod((m) => m ?? "google");
+      setName((n) => n || "Tester");
     }
     setHydrated(true);
   }, []);
