@@ -29,12 +29,15 @@ export function AxisMark({
 }) {
   return (
     <div
-      className="flex shrink-0 items-center justify-center bg-ink"
+      className="flex shrink-0 items-center justify-center"
       style={{
         width: size,
         height: size,
         borderRadius: radius,
-        boxShadow: "0 14px 28px -12px rgb(32 30 29 / 0.55)",
+        // Top-lit gradient + inner highlight gives the tile real depth.
+        background: "linear-gradient(155deg, #35312e 0%, #201e1d 58%)",
+        boxShadow:
+          "0 10px 30px -12px rgb(32 30 29 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.07)",
       }}
     >
       <AxisGlyph size={glyph} />
