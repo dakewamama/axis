@@ -169,7 +169,9 @@ function ChatThread() {
                 time={clock(m.at)}
                 disabled={typing}
                 onButton={(id, title) =>
-                  send({ buttonId: id, display: title })
+                  id.startsWith("q:")
+                    ? send({ text: title, display: title })
+                    : send({ buttonId: id, display: title })
                 }
                 onShareLocation={() =>
                   send({
