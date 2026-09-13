@@ -8,28 +8,28 @@ export type Place = {
   tag?: string;
 };
 
-const KEY = "axis:location:v1";
+export type Coords = { lat: number; lng: number };
 
-const SAVED: Place[] = [
-  { label: "Home", detail: "14 Herbert Macaulay Way, Yaba", tag: "Default" },
-  { label: "Work", detail: "Plot 8 Adeola Odeku, Victoria Island" },
-  { label: "Mum's place", detail: "22 Ogunlana Drive, Surulere" },
-  { label: "Nadia's Kitchen", detail: "Last used yesterday" },
-];
+const KEY = "axis:location:v1";
 
 type Selection = number | "current";
 
 type Persisted = {
   places: Place[];
   selected: Selection;
+  current: Coords | null;
 };
 
 type LocationState = {
   hydrated: boolean;
   places: Place[];
   selected: Selection;
+  current: Coords | null;
   select: (value: Selection) => void;
   addPlace: (label: string) => void;
+  /** Ask the browser for the real device location. Resolves to an error string
+   *  on failure (permission denied / unavailable), or null on success. */
+  useCurrentLocation: () => Promise<string | null>;
   activeLabel: string;
   activeDetail: string;
   reset: () => void;
@@ -39,18 +39,21 @@ const LocationContext = createContext<LocationState | null>(null);
 
 export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
-  const [places, setPlaces] = useState<Place[]>(SAVED);
-  const [selected, setSelected] = useState<Selection>(0);
+  // No fabricated addresses. Saved places start empty; the user adds their own.
+  const [places, setPlaces] = useState<Place[]>([]);
+  const [selected, setSelected] = useState<Selection>("current");
+  const [current, setCurrent] = useState<Coords | null>(null);
 
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(KEY);
       if (raw) {
         const p = JSON.parse(raw) as Partial<Persisted>;
-        if (Array.isArray(p.places) && p.places.length) setPlaces(p.places);
+        if (Array.isArray(p.places)) setPlaces(p.places);
         if (p.selected === "current" || typeof p.selected === "number") {
           setSelected(p.selected);
         }
+        if (p.current && typeof p.current.lat === "number") setCurrent(p.current);
       }
     } catch {
       // corrupt or unavailable storage — fall through to defaults
@@ -61,20 +64,44 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
     try {
-      const payload: Persisted = { places, selected };
+      const payload: Persisted = { places, selected, current };
       sessionStorage.setItem(KEY, JSON.stringify(payload));
     } catch {
       // storage full or blocked
     }
-  }, [hydrated, places, selected]);
+  }, [hydrated, places, selected, current]);
 
   function addPlace(label: string) {
     const trimmed = label.trim();
     if (!trimmed) return;
     setPlaces((prev) => {
-      const next = [...prev, { label: trimmed, detail: "Added just now" }];
+      const next = [...prev, { label: trimmed, detail: "Saved address" }];
       setSelected(next.length - 1);
       return next;
+    });
+  }
+
+  function useCurrentLocation(): Promise<string | null> {
+    return new Promise((resolve) => {
+      if (typeof navigator === "undefined" || !navigator.geolocation) {
+        resolve("Location isn't available on this device.");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setCurrent({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setSelected("current");
+          resolve(null);
+        },
+        (err) => {
+          resolve(
+            err.code === err.PERMISSION_DENIED
+              ? "Location permission was denied."
+              : "Couldn't get your location. Try again.",
+          );
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+      );
     });
   }
 
@@ -84,16 +111,23 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // ignore
     }
-    setPlaces(SAVED);
-    setSelected(0);
+    setPlaces([]);
+    setSelected("current");
+    setCurrent(null);
   }
 
   const active = selected === "current" ? null : places[selected];
   const activeLabel =
-    selected === "current" ? "Near Surulere" : (active?.label ?? "Home");
+    selected === "current"
+      ? current
+        ? "Current location"
+        : "Set location"
+      : (active?.label ?? "Set location");
   const activeDetail =
     selected === "current"
-      ? "Using your current location"
+      ? current
+        ? `${current.lat.toFixed(4)}, ${current.lng.toFixed(4)}`
+        : "Tap to set your delivery location"
       : (active?.detail ?? "");
 
   return (
@@ -102,8 +136,10 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         hydrated,
         places,
         selected,
+        current,
         select: setSelected,
         addPlace,
+        useCurrentLocation,
         activeLabel,
         activeDetail,
         reset,

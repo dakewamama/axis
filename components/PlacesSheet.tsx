@@ -11,14 +11,27 @@ export function PlacesSheet({
   open: boolean;
   onClose: () => void;
 }) {
-  const { places, selected, select, addPlace } = useLocation();
+  const { places, selected, current, select, addPlace, useCurrentLocation } =
+    useLocation();
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
+  const [locating, setLocating] = useState(false);
+  const [error, setError] = useState("");
 
   function close() {
     setAdding(false);
     setDraft("");
+    setError("");
     onClose();
+  }
+
+  async function pickCurrent() {
+    setError("");
+    setLocating(true);
+    const err = await useCurrentLocation();
+    setLocating(false);
+    if (err) setError(err);
+    else close();
   }
 
   function save() {
@@ -45,20 +58,18 @@ export function PlacesSheet({
 
       <div className="px-5 pt-4">
         <button
-          onClick={() => {
-            select("current");
-            close();
-          }}
-          className={`flex w-full items-center gap-3.5 rounded-[18px] px-4 py-3.5 text-left transition-colors ${
+          onClick={pickCurrent}
+          disabled={locating}
+          className={`flex w-full items-center gap-3.5 rounded-[18px] px-4 py-3.5 text-left transition-colors disabled:opacity-70 ${
             onCurrent ? "bg-ink" : "bg-white shadow-card hover:bg-red-tint"
           }`}
         >
           <span
             className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold text-white ${
-              onCurrent ? "bg-red" : "bg-unfilled"
+              onCurrent && current ? "bg-red" : "bg-unfilled"
             }`}
           >
-            {onCurrent ? "✓" : ""}
+            {onCurrent && current ? "✓" : "📍"}
           </span>
           <span className="min-w-0 flex-1">
             <span
@@ -73,14 +84,23 @@ export function PlacesSheet({
                 onCurrent ? "text-cream/55" : "text-faint"
               }`}
             >
-              {onCurrent ? "Detected: near Surulere" : "Most accurate for rides"}
+              {locating
+                ? "Getting your location…"
+                : onCurrent && current
+                  ? `${current.lat.toFixed(4)}, ${current.lng.toFixed(4)}`
+                  : "Most accurate for delivery"}
             </span>
           </span>
         </button>
+        {error && (
+          <p className="mt-2 px-1 text-[12px] text-red-deep">{error}</p>
+        )}
 
-        <div className="mt-5 mb-2.5 text-[10px] font-bold tracking-[0.1em] text-faint uppercase">
-          Saved
-        </div>
+        {places.length > 0 && (
+          <div className="mt-5 mb-2.5 text-[10px] font-bold tracking-[0.1em] text-faint uppercase">
+            Saved
+          </div>
+        )}
         <div className="flex flex-col gap-2">
           {places.map((p, i) => {
             const on = selected === i;
