@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
 
   const b = (body ?? {}) as Record<string, unknown>;
   const userId = typeof b.userId === "string" ? b.userId : "";
+  const userName = typeof b.userName === "string" ? b.userName : undefined;
   const text = typeof b.text === "string" ? b.text : undefined;
   const buttonId = typeof b.buttonId === "string" ? b.buttonId : undefined;
   if (!userId) {
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
     const upstream = await fetch(`${BRAIN_URL}/webhooks/web`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ userId, text, buttonId }),
+      body: JSON.stringify({ userId, userName, text, buttonId }),
     });
     const data = await upstream.json().catch(() => ({}));
     return NextResponse.json(data, { status: upstream.status });

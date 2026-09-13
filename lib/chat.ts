@@ -50,6 +50,7 @@ interface ChatResponse {
  */
 export async function sendToBrain(input: {
   userId: string;
+  userName?: string;
   text?: string;
   buttonId?: string;
 }): Promise<OutboundMessage[]> {

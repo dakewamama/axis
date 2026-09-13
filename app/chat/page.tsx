@@ -78,6 +78,7 @@ function ChatThread() {
       try {
         const replies = await sendToBrain({
           userId: webUserId,
+          userName: name.trim() || undefined,
           text: input.text,
           buttonId: input.buttonId,
         });
@@ -96,7 +97,7 @@ function ChatThread() {
         setTyping(false);
       }
     },
-    [webUserId],
+    [webUserId, name],
   );
 
   function submitDraft() {
@@ -152,7 +153,7 @@ function ChatThread() {
         >
           <Bubble
             who="axis"
-            text={`Hi ${firstName}. I'm Axis.\n\nTell me what you need in plain words — order food, send a gift, or shop. No menus.`}
+            text={`Hey ${firstName}, what can Axis do for you today?`}
             time=""
           />
 
