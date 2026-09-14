@@ -42,15 +42,22 @@ function clock(at: number): string {
   });
 }
 
-type Action = { type: "append"; messages: Message[] };
+type Action =
+  | { type: "append"; messages: Message[] }
+  | { type: "replace"; messages: Message[] };
 
-// Append-only. Nothing here ever clears the thread.
+// Append-only during a session; `replace` is only used to restore saved history.
 function reducer(state: Message[], action: Action): Message[] {
   switch (action.type) {
     case "append":
       return [...state, ...action.messages];
+    case "replace":
+      return action.messages;
   }
 }
+
+const CHAT_KEY = (webUserId: string) => `axis:chat:v1:${webUserId}`;
+const MAX_SAVED = 60;
 
 function ChatThread() {
   const router = useRouter();
@@ -65,10 +72,41 @@ function ChatThread() {
   const [messages, dispatch] = useReducer(reducer, []);
   const [draft, setDraft] = useState("");
   const [typing, setTyping] = useState(false);
+  const [chatHydrated, setChatHydrated] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const seeded = useRef(false);
   const firstName = name.trim() || "there";
+
+  // Restore the saved thread once we know the user, so a reload keeps context.
+  useEffect(() => {
+    if (!webUserId || chatHydrated) return;
+    try {
+      const raw = localStorage.getItem(CHAT_KEY(webUserId));
+      if (raw) {
+        const saved = JSON.parse(raw) as Message[];
+        if (Array.isArray(saved) && saved.length) {
+          dispatch({ type: "replace", messages: saved });
+        }
+      }
+    } catch {
+      // ignore corrupt/unavailable storage
+    }
+    setChatHydrated(true);
+  }, [webUserId, chatHydrated]);
+
+  // Persist the thread (capped) after hydration.
+  useEffect(() => {
+    if (!chatHydrated || !webUserId) return;
+    try {
+      localStorage.setItem(
+        CHAT_KEY(webUserId),
+        JSON.stringify(messages.slice(-MAX_SAVED)),
+      );
+    } catch {
+      // storage full/blocked
+    }
+  }, [messages, chatHydrated, webUserId]);
 
   const send = useCallback(
     async (input: { text?: string; buttonId?: string; display: string }) => {
@@ -110,13 +148,14 @@ function ChatThread() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, typing]);
 
-  // A shared link (?q) starts the conversation once webUserId is ready.
+  // A shared link (?q) starts the conversation once the thread is hydrated — but
+  // only on a fresh (empty) thread, so a reload doesn't replay the same intent.
   useEffect(() => {
-    if (seed && webUserId && !seeded.current) {
+    if (seed && webUserId && chatHydrated && !seeded.current && messages.length === 0) {
       seeded.current = true;
       send({ text: seed, display: seed });
     }
-  }, [seed, webUserId, send]);
+  }, [seed, webUserId, chatHydrated, messages.length, send]);
 
   const empty = messages.length === 0;
 
