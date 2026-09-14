@@ -23,8 +23,8 @@ export type Shortcut = { prompt: string; vertical?: number };
 
 export const HOME_SHORTCUTS: Shortcut[] = [
   { prompt: "does nadia have chicken wings", vertical: 0 }, // Food delivery
-  { prompt: "send suya to my mum in surulere", vertical: 3 }, // Send a package
   { prompt: "order jollof for two", vertical: 0 },
+  { prompt: "who has fresh fruits", vertical: 0 }, // groceries
   { prompt: "buy an oraimo powerbank" }, // shopping
 ];
 

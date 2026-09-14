@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Axis",
     short_name: "Axis",
-    description: "One chat for food, gifts and shopping in Nigeria.",
+    description: "One chat for food, groceries and shopping in Nigeria.",
     start_url: "/",
     display: "standalone",
     theme_color: "#f7f5f2",

@@ -25,7 +25,7 @@ export default function SplashPage() {
             apps.
           </h1>
           <p className="mt-5 max-w-[300px] text-base leading-[1.45] text-pretty text-muted">
-            Axis is one chat to order food, send gifts and shop. Type it like
+            Axis is one chat to order food, groceries and shop. Type it like
             you&rsquo;d say it.
           </p>
         </div>

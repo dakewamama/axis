@@ -25,11 +25,11 @@ import {
   userMessage,
 } from "@/lib/chat";
 
-// Supported verticals only — delivery, gifting, shopping. Rides, airtime and
+// Supported verticals only — food/groceries and shopping. Rides, airtime and
 // bills are not backed by brain, so they are not suggested here.
 const SUGGESTIONS = [
   "does nadia have chicken wings",
-  "send suya to my mum in surulere",
+  "who has fresh fruits",
   "buy an oraimo powerbank",
 ];
 
