@@ -46,7 +46,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem(KEY);
+      const raw = localStorage.getItem(KEY);
       if (raw) {
         const p = JSON.parse(raw) as Partial<Persisted>;
         if (Array.isArray(p.places)) setPlaces(p.places);
@@ -65,7 +65,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     if (!hydrated) return;
     try {
       const payload: Persisted = { places, selected, current };
-      sessionStorage.setItem(KEY, JSON.stringify(payload));
+      localStorage.setItem(KEY, JSON.stringify(payload));
     } catch {
       // storage full or blocked
     }
@@ -107,7 +107,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   function reset() {
     try {
-      sessionStorage.removeItem(KEY);
+      localStorage.removeItem(KEY);
     } catch {
       // ignore
     }

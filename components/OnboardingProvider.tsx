@@ -63,7 +63,7 @@ export function OnboardingProvider({
 
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem(KEY);
+      const raw = localStorage.getItem(KEY);
       if (raw) {
         const p = JSON.parse(raw) as Partial<Persisted>;
         if (typeof p.name === "string") setName(p.name);
@@ -105,7 +105,7 @@ export function OnboardingProvider({
         telegram,
         webUserId,
       };
-      sessionStorage.setItem(KEY, JSON.stringify(payload));
+      localStorage.setItem(KEY, JSON.stringify(payload));
     } catch {
       // storage full or blocked
     }
@@ -132,7 +132,7 @@ export function OnboardingProvider({
 
   function reset() {
     try {
-      sessionStorage.removeItem(KEY);
+      localStorage.removeItem(KEY);
     } catch {
       // ignore
     }

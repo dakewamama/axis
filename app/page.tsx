@@ -5,9 +5,9 @@ import { AxisMark } from "@/components/AxisMark";
 import { SKIP_ONBOARDING } from "@/lib/flags";
 
 const STATS = [
-  { value: "7", label: "Services" },
-  { value: "0", label: "Downloads" },
-  { value: "4", label: "Channels" },
+  { value: "0", label: "Apps to install" },
+  { value: "1", label: "Chat for it all" },
+  { value: "24/7", label: "Always on" },
 ];
 
 export default function SplashPage() {
@@ -25,8 +25,8 @@ export default function SplashPage() {
             apps.
           </h1>
           <p className="mt-5 max-w-[300px] text-base leading-[1.45] text-pretty text-muted">
-            Axis is one chat that orders food, books rides, pays bills and moves
-            money. Type it like you&rsquo;d say it.
+            Axis is one chat to order food, send gifts and shop. Type it like
+            you&rsquo;d say it.
           </p>
         </div>
 
