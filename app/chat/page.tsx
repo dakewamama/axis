@@ -282,22 +282,6 @@ function CardView({
   onButton: (id: string, title: string) => void;
   onShareLocation: () => void;
 }) {
-  if (card.kind === "link") {
-    return (
-      <div className="flex w-full flex-col items-start gap-1.5">
-        <Bubble who="axis" text={card.text} time={time} />
-        <a
-          href={card.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ml-1 inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2.5 text-[13px] font-bold text-cream transition-colors hover:bg-red focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
-        >
-          {card.label ?? "Open"} <span aria-hidden="true">↗</span>
-        </a>
-      </div>
-    );
-  }
-
   if (card.kind === "location_request") {
     return (
       <div className="flex w-full flex-col items-start gap-1.5">
@@ -339,12 +323,13 @@ function CardView({
         <Bubble who="axis" text={card.text} time={time} />
         <div className="ml-1 grid w-full grid-cols-2 gap-2.5">
           {card.products.map((p, i) => (
-            <a
-              key={`${p.url}-${i}`}
-              href={p.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-card transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
+            // Tapping a product starts an in-app order — Axis never links out to
+            // an external store.
+            <button
+              key={`${p.title}-${i}`}
+              onClick={() => onButton(`q:order ${p.title}`, `Order ${p.title}`)}
+              disabled={disabled}
+              className="flex flex-col overflow-hidden rounded-2xl bg-white text-left shadow-card transition-transform hover:-translate-y-0.5 disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
             >
               {p.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -368,7 +353,7 @@ function CardView({
                 )}
                 <span className="mt-auto text-[10px] text-faint">{p.merchant}</span>
               </div>
-            </a>
+            </button>
           ))}
         </div>
       </div>

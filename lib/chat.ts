@@ -17,7 +17,6 @@ export type OutboundMessage =
   | { kind: "buttons"; text: string; buttons: ReplyButton[] }
   | { kind: "list"; text: string; header?: string; sections: ListSection[] }
   | { kind: "location_request"; text: string }
-  | { kind: "link"; text: string; url: string; label?: string }
   | { kind: "products"; text: string; products: ProductCard[] };
 
 /** Any structured (non-plain-text) reply. */
