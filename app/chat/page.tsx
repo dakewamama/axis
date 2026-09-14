@@ -333,6 +333,48 @@ function CardView({
     );
   }
 
+  if (card.kind === "products") {
+    return (
+      <div className="flex w-full flex-col items-start gap-2">
+        <Bubble who="axis" text={card.text} time={time} />
+        <div className="ml-1 grid w-full grid-cols-2 gap-2.5">
+          {card.products.map((p, i) => (
+            <a
+              key={`${p.url}-${i}`}
+              href={p.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-card transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
+            >
+              {p.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={p.imageUrl}
+                  alt={p.title}
+                  className="h-28 w-full bg-red-tint object-contain p-2"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="flex h-28 w-full items-center justify-center bg-red-tint text-2xl">
+                  🛍️
+                </div>
+              )}
+              <div className="flex flex-1 flex-col gap-1 p-2.5">
+                <span className="line-clamp-2 text-[12px] leading-snug font-semibold text-ink">
+                  {p.title}
+                </span>
+                {p.price && (
+                  <span className="text-[13px] font-bold text-red">{p.price}</span>
+                )}
+                <span className="mt-auto text-[10px] text-faint">{p.merchant}</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // list
   return (
     <div className="flex w-full flex-col items-start gap-2">

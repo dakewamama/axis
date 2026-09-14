@@ -4,13 +4,21 @@
 export type ReplyButton = { id: string; title: string };
 export type ListRow = { id: string; title: string; description?: string };
 export type ListSection = { title?: string; rows: ListRow[] };
+export type ProductCard = {
+  title: string;
+  price?: string;
+  imageUrl?: string;
+  url: string;
+  merchant: string;
+};
 
 export type OutboundMessage =
   | { kind: "text"; text: string }
   | { kind: "buttons"; text: string; buttons: ReplyButton[] }
   | { kind: "list"; text: string; header?: string; sections: ListSection[] }
   | { kind: "location_request"; text: string }
-  | { kind: "link"; text: string; url: string; label?: string };
+  | { kind: "link"; text: string; url: string; label?: string }
+  | { kind: "products"; text: string; products: ProductCard[] };
 
 /** Any structured (non-plain-text) reply. */
 export type Card = Exclude<OutboundMessage, { kind: "text" }>;
