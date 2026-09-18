@@ -108,7 +108,7 @@ export default function HomePage() {
             />
             <div className="flex items-center justify-between pt-1 pl-3">
               <span className="text-[11px] text-faint">
-                Food · groceries · shopping
+                Airtime · data · top-ups
               </span>
               <button
                 onClick={() => ask(draft)}

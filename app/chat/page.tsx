@@ -25,12 +25,12 @@ import {
   userMessage,
 } from "@/lib/chat";
 
-// Supported verticals only — food/groceries and shopping. Rides, airtime and
-// bills are not backed by brain, so they are not suggested here.
+// Airtime is the live vertical the brain fulfils end to end, so suggestions reflect
+// what actually works (food/shop were removed in the architecture collapse).
 const SUGGESTIONS = [
-  "does nadia have chicken wings",
-  "who has fresh fruits",
-  "buy an oraimo powerbank",
+  "buy ₦200 airtime for 08012345678",
+  "buy ₦500 MTN airtime",
+  "top up 08051234567 with ₦100",
 ];
 
 const MAX_INPUT = 512;
@@ -268,7 +268,7 @@ function ChatThread() {
   );
 }
 
-// Renders brain's structured replies: buttons, list, location_request, link.
+// Renders brain's structured replies: buttons, list, location_request, products.
 function CardView({
   card,
   time,

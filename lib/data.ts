@@ -17,15 +17,14 @@ export const VERTICALS: Vertical[] = [
 ];
 
 // Home suggestion chips. `vertical` (index into VERTICALS) lets /home float the
-// chips for services the user actually selected in onboarding to the front. Chips
-// with no vertical (e.g. shopping) are always available.
+// chips for services the user selected in onboarding. Airtime is the live vertical
+// today, so the chips reflect what actually works end to end (index 2 = airtime).
 export type Shortcut = { prompt: string; vertical?: number };
 
 export const HOME_SHORTCUTS: Shortcut[] = [
-  { prompt: "does nadia have chicken wings", vertical: 0 }, // Food delivery
-  { prompt: "order jollof for two", vertical: 0 },
-  { prompt: "who has fresh fruits", vertical: 0 }, // groceries
-  { prompt: "buy an oraimo powerbank" }, // shopping
+  { prompt: "buy ₦200 airtime for 08012345678", vertical: 2 },
+  { prompt: "buy ₦500 MTN airtime", vertical: 2 },
+  { prompt: "top up 08051234567 with ₦100", vertical: 2 },
 ];
 
 export type Channel = {
