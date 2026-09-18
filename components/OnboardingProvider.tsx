@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { SKIP_ONBOARDING } from "@/lib/flags";
 
 type AuthMethod = "google" | "apple" | "phone";
@@ -119,6 +119,22 @@ export function OnboardingProvider({
     telegram,
     webUserId,
   ]);
+
+  // Once the user is authenticated, ensure their wallet exists via the server
+  // proxy (idempotent, best-effort). Fires once; retries if the call fails.
+  const walletEnsured = useRef(false);
+  useEffect(() => {
+    if (!hydrated || walletEnsured.current) return;
+    if (!authMethod || !webUserId) return;
+    walletEnsured.current = true;
+    fetch("/api/wallet", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ userId: webUserId }),
+    }).catch(() => {
+      walletEnsured.current = false;
+    });
+  }, [hydrated, authMethod, webUserId]);
 
   const toggle =
     (setter: React.Dispatch<React.SetStateAction<Set<number>>>) =>
