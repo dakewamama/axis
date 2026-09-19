@@ -9,7 +9,7 @@ import { SKIP_ONBOARDING } from "@/lib/flags";
 
 export default function AuthPage() {
   const router = useRouter();
-  const { setAuthMethod, setWebUserId, setEmail } = useOnboarding();
+  const { setAuthMethod, setWebUserId, setEmail, setName } = useOnboarding();
   const [mode, setMode] = useState<"signup" | "login">("signup");
   const [emailInput, setEmailInput] = useState("");
   const [password, setPassword] = useState("");
@@ -33,6 +33,7 @@ export default function AuthPage() {
       const data = (await res.json().catch(() => ({}))) as {
         webUserId?: string;
         email?: string;
+        name?: string;
         error?: string;
       };
       if (!res.ok || !data.webUserId) {
@@ -43,6 +44,8 @@ export default function AuthPage() {
       setEmail(data.email || emailInput.trim());
       setWebUserId(data.webUserId);
       setAuthMethod("email");
+      // Login restores the saved profile name; signup returns "" (set on /name).
+      if (data.name) setName(data.name);
       router.push(mode === "signup" ? "/name" : "/home");
     } catch {
       setError("Couldn't reach Axis. Try again in a moment.");

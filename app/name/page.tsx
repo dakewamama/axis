@@ -10,7 +10,7 @@ import { SKIP_ONBOARDING } from "@/lib/flags";
 
 export default function NamePage() {
   const router = useRouter();
-  const { name, setName } = useOnboarding();
+  const { name, setName, webUserId } = useOnboarding();
   useGuard("authed");
 
   useEffect(() => {
@@ -20,7 +20,14 @@ export default function NamePage() {
   const trimmed = name.trim();
 
   function advance() {
-    if (trimmed) router.push("/channels");
+    if (!trimmed) return;
+    // Persist the name onto the account (best-effort) so login restores it.
+    void fetch("/api/auth/name", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ webUserId, name: trimmed }),
+    }).catch(() => {});
+    router.push("/channels");
   }
 
   return (
