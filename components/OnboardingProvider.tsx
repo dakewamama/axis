@@ -3,12 +3,13 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { SKIP_ONBOARDING } from "@/lib/flags";
 
-type AuthMethod = "google" | "apple" | "phone";
+type AuthMethod = "google" | "apple" | "email";
 
 const KEY = "axis:onboarding:v1";
 
 type Persisted = {
   name: string;
+  email: string;
   authMethod: AuthMethod | null;
   services: number[];
   channels: number[];
@@ -29,6 +30,9 @@ type OnboardingState = {
   hydrated: boolean;
   name: string;
   setName: (name: string) => void;
+  email: string;
+  setEmail: (email: string) => void;
+  setWebUserId: (id: string) => void;
   authMethod: AuthMethod | null;
   setAuthMethod: (method: AuthMethod) => void;
   services: Set<number>;
@@ -52,6 +56,7 @@ export function OnboardingProvider({
 }) {
   const [hydrated, setHydrated] = useState(false);
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [authMethod, setAuthMethod] = useState<AuthMethod | null>(null);
   const [services, setServices] = useState<Set<number>>(
     () => new Set([0, 1, 2, 3, 4, 5, 6]),
@@ -67,6 +72,7 @@ export function OnboardingProvider({
       if (raw) {
         const p = JSON.parse(raw) as Partial<Persisted>;
         if (typeof p.name === "string") setName(p.name);
+        if (typeof p.email === "string") setEmail(p.email);
         if (p.authMethod) setAuthMethod(p.authMethod);
         if (Array.isArray(p.services)) setServices(new Set(p.services));
         if (Array.isArray(p.channels)) setChannels(new Set(p.channels));
@@ -98,6 +104,7 @@ export function OnboardingProvider({
     try {
       const payload: Persisted = {
         name,
+        email,
         authMethod,
         services: [...services],
         channels: [...channels],
@@ -112,6 +119,7 @@ export function OnboardingProvider({
   }, [
     hydrated,
     name,
+    email,
     authMethod,
     services,
     channels,
@@ -153,6 +161,7 @@ export function OnboardingProvider({
       // ignore
     }
     setName("");
+    setEmail("");
     setAuthMethod(null);
     setServices(new Set([0, 1, 2, 3, 4, 5, 6]));
     setChannels(new Set([0, 1]));
@@ -167,6 +176,9 @@ export function OnboardingProvider({
         hydrated,
         name,
         setName,
+        email,
+        setEmail,
+        setWebUserId,
         authMethod,
         setAuthMethod,
         services,
