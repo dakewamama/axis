@@ -28,9 +28,9 @@ import {
 // Airtime is the live vertical the brain fulfils end to end, so suggestions reflect
 // what actually works (food/shop were removed in the architecture collapse).
 const SUGGESTIONS = [
-  "buy ₦200 airtime for 08012345678",
-  "buy ₦500 MTN airtime",
-  "top up 08051234567 with ₦100",
+  "buy ₦200 MTN airtime for 08031234567",
+  "buy ₦100 Glo airtime for 08051234567",
+  "buy ₦500 Airtel airtime for 08021234567",
 ];
 
 const MAX_INPUT = 512;

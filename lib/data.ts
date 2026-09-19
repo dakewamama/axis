@@ -22,9 +22,9 @@ export const VERTICALS: Vertical[] = [
 export type Shortcut = { prompt: string; vertical?: number };
 
 export const HOME_SHORTCUTS: Shortcut[] = [
-  { prompt: "buy ₦200 airtime for 08012345678", vertical: 2 },
-  { prompt: "buy ₦500 MTN airtime", vertical: 2 },
-  { prompt: "top up 08051234567 with ₦100", vertical: 2 },
+  { prompt: "buy ₦200 MTN airtime for 08031234567", vertical: 2 },
+  { prompt: "buy ₦100 Glo airtime for 08051234567", vertical: 2 },
+  { prompt: "buy ₦500 Airtel airtime for 08021234567", vertical: 2 },
 ];
 
 export type Channel = {
