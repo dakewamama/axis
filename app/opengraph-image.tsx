@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Axis — one chat for food, groceries and shopping in Nigeria";
+export const alt = "Axis — buy airtime and data by chat in Nigeria";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -72,7 +72,7 @@ export default function OpengraphImage() {
               maxWidth: 900,
             }}
           >
-            One chat. Order food, groceries, shop.
+            One chat. Buy airtime, top up any line.
           </span>
           <span
             style={{

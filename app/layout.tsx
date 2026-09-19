@@ -21,7 +21,7 @@ const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://axis-two-xi.vercel.app";
 const TITLE = "Axis: stop downloading apps";
 const DESCRIPTION =
-  "One chat to order food, groceries and shop. Type it like you'd say it.";
+  "One chat to buy airtime and top up any line. Type it like you'd say it.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

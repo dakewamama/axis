@@ -148,14 +148,17 @@ function ChatThread() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, typing]);
 
-  // A shared link (?q) starts the conversation once the thread is hydrated — but
-  // only on a fresh (empty) thread, so a reload doesn't replay the same intent.
+  // A ?q intent (home chip or shared link) is sent once the thread is hydrated,
+  // then stripped from the URL so a reload doesn't replay it and the message text
+  // doesn't linger in history. Works for returning users too (not just an empty
+  // thread), so home chips always send.
   useEffect(() => {
-    if (seed && webUserId && chatHydrated && !seeded.current && messages.length === 0) {
+    if (seed && webUserId && chatHydrated && !seeded.current) {
       seeded.current = true;
       send({ text: seed, display: seed });
+      router.replace("/chat");
     }
-  }, [seed, webUserId, chatHydrated, messages.length, send]);
+  }, [seed, webUserId, chatHydrated, send, router]);
 
   const empty = messages.length === 0;
 
