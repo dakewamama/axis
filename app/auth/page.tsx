@@ -9,16 +9,24 @@ import { SKIP_ONBOARDING } from "@/lib/flags";
 
 export default function AuthPage() {
   const router = useRouter();
-  const { setAuthMethod, setWebUserId, setEmail, setName } = useOnboarding();
+  const { hydrated, authMethod, name, setAuthMethod, setWebUserId, setEmail, setName } =
+    useOnboarding();
   const [mode, setMode] = useState<"signup" | "login">("signup");
   const [emailInput, setEmailInput] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  // Already signed in (session restored)? Skip the form entirely.
   useEffect(() => {
-    if (SKIP_ONBOARDING) router.replace("/home");
-  }, [router]);
+    if (SKIP_ONBOARDING) {
+      router.replace("/home");
+      return;
+    }
+    if (hydrated && authMethod) {
+      router.replace(name.trim() ? "/home" : "/name");
+    }
+  }, [router, hydrated, authMethod, name]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
