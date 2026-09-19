@@ -21,6 +21,14 @@ export type Entry = {
   at: number;
 };
 
+/**
+ * "provisioning" — waiting on the first wallet response.
+ * "ready"        — address known.
+ * "unavailable"  — the wallet call failed (e.g. proxy not configured); not a
+ *                  transient "just a moment", so the UI should say so honestly.
+ */
+export type WalletStatus = "provisioning" | "ready" | "unavailable";
+
 type WalletState = {
   /** Server-computed NGN estimate of the spendable balance. */
   balance: number;
@@ -28,6 +36,7 @@ type WalletState = {
   usdc: string | null;
   /** True once the user's wallet address is known. */
   live: boolean;
+  status: WalletStatus;
   entries: Entry[];
   refresh: () => void;
   /** The user's deposit address (USDC on Solana). */
@@ -41,6 +50,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [address, setAddress] = useState("");
   const [usdc, setUsdc] = useState<string | null>(null);
   const [ngn, setNgn] = useState(0);
+  const [status, setStatus] = useState<WalletStatus>("provisioning");
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const provisioning = useRef(false);
 
@@ -59,9 +69,15 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ userId: webUserId }),
       });
       const data = (await res.json().catch(() => ({}))) as { address?: string };
-      if (res.ok && data.address) setAddress(data.address);
+      if (res.ok && data.address) {
+        setAddress(data.address);
+        setStatus("ready");
+      } else {
+        // Not a transient wait — the wallet path is misconfigured or erroring.
+        setStatus("unavailable");
+      }
     } catch {
-      // best-effort; the poll below will try again
+      setStatus("unavailable");
     } finally {
       provisioning.current = false;
     }
@@ -114,6 +130,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         balance: ngn,
         usdc,
         live,
+        status,
         entries,
         refresh: () => void refresh(),
         axisAddress: address,

@@ -38,6 +38,8 @@ export function AddMoneySheet({
   onClose: () => void;
   axisAddress: string;
 }) {
+  const { status, refresh } = useWallet();
+
   return (
     <Sheet open={open} onClose={onClose}>
       <div className="px-5 pt-2.5 pb-1">
@@ -50,16 +52,30 @@ export function AddMoneySheet({
         </span>
       </div>
 
-      {!axisAddress ? (
+      {axisAddress ? (
+        <DepositView owner={axisAddress} onClose={onClose} />
+      ) : status === "unavailable" ? (
         <div className="px-5 pt-4 pb-7">
-          <p className="rounded-2xl bg-white px-4 py-4 text-[13px] text-faint shadow-card">
-            Setting up your wallet… this takes a moment after you sign in. If it
-            doesn’t appear, reopen this in a moment.
+          <p className="rounded-2xl bg-white px-4 py-4 text-[13px] text-ink shadow-card">
+            We couldn’t reach your wallet just now, so we can’t show your deposit
+            address here yet. Your balance and any funds are safe. Try again in a
+            moment.
           </p>
+          <button
+            onClick={() => refresh()}
+            className="mt-3 w-full rounded-full bg-red py-[15px] text-[15px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark"
+          >
+            Try again
+          </button>
           <BackButton onClick={onClose} label="Close" />
         </div>
       ) : (
-        <DepositView owner={axisAddress} onClose={onClose} />
+        <div className="px-5 pt-4 pb-7">
+          <p className="rounded-2xl bg-white px-4 py-4 text-[13px] text-faint shadow-card">
+            Setting up your wallet…
+          </p>
+          <BackButton onClick={onClose} label="Close" />
+        </div>
       )}
     </Sheet>
   );

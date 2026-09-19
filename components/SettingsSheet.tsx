@@ -8,13 +8,13 @@ import { useLocation } from "@/components/LocationProvider";
 const AUTH_LABEL: Record<string, string> = {
   google: "Google",
   apple: "Apple",
-  phone: "your phone number",
+  email: "email",
 };
 
 /**
  * The account/settings hub, opened from the Axis logo on /home. Holds identity,
- * the places to edit collected state, wallet funding, and the destructive
- * "Start over". Keeps /home itself uncluttered.
+ * the places to edit collected state, wallet funding, and "Log out". Keeps
+ * /home itself uncluttered.
  */
 export function SettingsSheet({
   open,
@@ -26,7 +26,7 @@ export function SettingsSheet({
   onAddMoney: () => void;
 }) {
   const router = useRouter();
-  const { name, setName, authMethod, reset } = useOnboarding();
+  const { name, setName, email, authMethod, reset } = useOnboarding();
   const { reset: resetLocation } = useLocation();
 
   function go(path: string) {
@@ -34,10 +34,12 @@ export function SettingsSheet({
     router.push(path);
   }
 
-  function startOver() {
+  // Sign out: clears local state + the session cookie. The account itself lives
+  // server-side, so logging back in restores the profile and wallet.
+  function logOut() {
     reset();
     resetLocation();
-    router.replace("/");
+    router.replace("/auth");
   }
 
   return (
@@ -47,9 +49,11 @@ export function SettingsSheet({
           Settings
         </span>
         <span className="mt-1 block text-[12.5px] text-faint">
-          {authMethod
-            ? `Signed in with ${AUTH_LABEL[authMethod]}.`
-            : "Your Axis account."}
+          {email
+            ? `Signed in as ${email}.`
+            : authMethod
+              ? `Signed in with ${AUTH_LABEL[authMethod] ?? "your account"}.`
+              : "Your Axis account."}
         </span>
       </div>
 
@@ -81,10 +85,10 @@ export function SettingsSheet({
         </div>
 
         <button
-          onClick={startOver}
+          onClick={logOut}
           className="mt-5 mb-7 w-full rounded-full py-3.5 text-[13px] font-semibold text-red transition-colors hover:bg-red-tint focus-visible:ring-2 focus-visible:ring-red focus-visible:outline-none"
         >
-          Start over
+          Log out
         </button>
       </div>
     </Sheet>
