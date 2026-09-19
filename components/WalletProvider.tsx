@@ -8,11 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  getFundingBalance,
-  getDeposits,
-  fundingConfigured,
-} from "@/lib/funding";
+import { useOnboarding } from "@/components/OnboardingProvider";
 
 export type Entry = {
   id: string;
@@ -26,99 +22,101 @@ export type Entry = {
 };
 
 type WalletState = {
+  /** Server-computed NGN estimate of the spendable balance. */
   balance: number;
+  /** Spendable USDC as a decimal string, or null until the first read. */
   usdc: string | null;
+  /** True once the user's wallet address is known. */
   live: boolean;
   entries: Entry[];
-  topUp: (amount: number, label?: string) => void;
-  charge: (amount: number, label: string) => void;
   refresh: () => void;
+  /** The user's deposit address (USDC on Solana). */
   axisAddress: string;
 };
 
 const WalletContext = createContext<WalletState | null>(null);
 
-const NGN = (n: number) => "₦" + n.toLocaleString("en-NG");
-
 export function WalletProvider({ children }: { children: React.ReactNode }) {
-  const [balance, setBalance] = useState(0);
+  const { hydrated, authMethod, webUserId } = useOnboarding();
+  const [address, setAddress] = useState("");
   const [usdc, setUsdc] = useState<string | null>(null);
-  const [deposits, setDeposits] = useState<Entry[]>([]);
-  const [local, setLocal] = useState<Entry[]>([]);
-
-  // Deliberately NOT sourced from a NEXT_PUBLIC_ env var. A single global
-  // funds-destination shipped to every visitor gives no per-user attribution,
-  // reconciliation, or idempotency. The per-user owner will come from the
-  // server-side session once a real settlement path exists; until then funding
-  // stays inert (live === false) rather than pointing everyone at one address.
-  const axisAddress = "";
-  const live = fundingConfigured && Boolean(axisAddress);
-
+  const [ngn, setNgn] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const provisioning = useRef(false);
 
-  const refresh = useCallback(() => {
-    if (!live) return;
-    getFundingBalance(axisAddress)
-      .then((b) => setUsdc(b.usdc))
-      .catch(() => {});
-    getDeposits(axisAddress)
-      .then((r) =>
-        setDeposits(
-          r.deposits.map((d) => ({
-            id: d.signature,
-            label: "USDC deposit",
-            display: `$${d.usdc}`,
-            positive: true,
-            confirmed: true,
-            at: Date.parse(d.at),
-          })),
-        ),
-      )
-      .catch(() => {});
-  }, [live, axisAddress]);
+  const authed = Boolean(hydrated && authMethod && webUserId);
+
+  // Ensure the user's wallet exists and learn its address. Idempotent
+  // server-side; retries on the next poll if it fails (e.g. wallet not yet
+  // configured). The address is the money key everything else hangs off.
+  const ensureWallet = useCallback(async () => {
+    if (!authed || address || provisioning.current) return;
+    provisioning.current = true;
+    try {
+      const res = await fetch("/api/wallet", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ userId: webUserId }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { address?: string };
+      if (res.ok && data.address) setAddress(data.address);
+    } catch {
+      // best-effort; the poll below will try again
+    } finally {
+      provisioning.current = false;
+    }
+  }, [authed, address, webUserId]);
+
+  // Poll spendable balance (deposits minus spends) for the user's wallet.
+  const refresh = useCallback(async () => {
+    if (!authed) return;
+    if (!address) {
+      void ensureWallet();
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/wallet?userId=${encodeURIComponent(webUserId)}`,
+      );
+      if (!res.ok) return;
+      const data = (await res.json().catch(() => ({}))) as {
+        usdc?: number;
+        ngn?: number | null;
+      };
+      if (typeof data.usdc === "number") setUsdc(data.usdc.toFixed(2));
+      if (typeof data.ngn === "number") setNgn(data.ngn);
+    } catch {
+      // transient — next tick retries
+    }
+  }, [authed, address, webUserId, ensureWallet]);
 
   useEffect(() => {
-    if (!live) return;
-    refresh();
-    timer.current = setInterval(refresh, 8000);
+    if (!authed) return;
+    void ensureWallet();
+  }, [authed, ensureWallet]);
+
+  useEffect(() => {
+    if (!authed) return;
+    void refresh();
+    timer.current = setInterval(() => void refresh(), 8000);
     return () => {
       if (timer.current) clearInterval(timer.current);
     };
-  }, [live, refresh]);
+  }, [authed, refresh]);
 
-  function record(label: string, amount: number, positive: boolean) {
-    setLocal((prev) => [
-      {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        label,
-        display: NGN(Math.abs(amount)),
-        positive,
-        confirmed: false,
-        at: Date.now(),
-      },
-      ...prev,
-    ]);
-  }
-
-  const entries = [...deposits, ...local].sort((a, b) => b.at - a.at);
+  const live = Boolean(address);
+  // No on-chain deposit history endpoint yet; the balance is the source of truth.
+  const entries: Entry[] = [];
 
   return (
     <WalletContext.Provider
       value={{
-        balance,
+        balance: ngn,
         usdc,
         live,
         entries,
-        topUp: (amount, label = "Wallet top-up") => {
-          setBalance((b) => b + amount);
-          record(label, amount, true);
-        },
-        charge: (amount, label) => {
-          setBalance((b) => Math.max(0, b - amount));
-          record(label, amount, false);
-        },
-        refresh,
-        axisAddress,
+        refresh: () => void refresh(),
+        axisAddress: address,
       }}
     >
       {children}

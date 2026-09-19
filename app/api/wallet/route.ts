@@ -6,6 +6,30 @@ import { NextRequest, NextResponse } from "next/server";
 const ONBOARDING_URL = process.env.ONBOARDING_URL?.replace(/\/$/, "");
 const INTERNAL_API_TOKEN = process.env.INTERNAL_API_TOKEN;
 
+// Spendable balance (deposits minus spends) + NGN estimate for the user's wallet.
+export async function GET(req: NextRequest) {
+  if (!ONBOARDING_URL || !INTERNAL_API_TOKEN) {
+    return NextResponse.json(
+      { error: "wallet is not configured (set ONBOARDING_URL + INTERNAL_API_TOKEN)" },
+      { status: 503 },
+    );
+  }
+  const userId = req.nextUrl.searchParams.get("userId") ?? "";
+  if (!userId) {
+    return NextResponse.json({ error: "userId is required" }, { status: 400 });
+  }
+  try {
+    const upstream = await fetch(
+      `${ONBOARDING_URL}/wallet/balance?userId=${encodeURIComponent(userId)}`,
+      { headers: { authorization: `Bearer ${INTERNAL_API_TOKEN}` } },
+    );
+    const data = await upstream.json().catch(() => ({}));
+    return NextResponse.json(data, { status: upstream.status });
+  } catch {
+    return NextResponse.json({ error: "wallet service unreachable" }, { status: 502 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   if (!ONBOARDING_URL || !INTERNAL_API_TOKEN) {
     return NextResponse.json(

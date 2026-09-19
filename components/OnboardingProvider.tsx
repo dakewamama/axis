@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { SKIP_ONBOARDING } from "@/lib/flags";
 
 type AuthMethod = "google" | "apple" | "email";
@@ -67,36 +67,71 @@ export function OnboardingProvider({
   const [webUserId, setWebUserId] = useState("");
 
   useEffect(() => {
+    let hadAuth = false;
+    let storedId = "";
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const p = JSON.parse(raw) as Partial<Persisted>;
         if (typeof p.name === "string") setName(p.name);
         if (typeof p.email === "string") setEmail(p.email);
-        if (p.authMethod) setAuthMethod(p.authMethod);
+        if (p.authMethod) {
+          setAuthMethod(p.authMethod);
+          hadAuth = true;
+        }
         if (Array.isArray(p.services)) setServices(new Set(p.services));
         if (Array.isArray(p.channels)) setChannels(new Set(p.channels));
         if (typeof p.whatsapp === "string") setWhatsapp(p.whatsapp);
         if (typeof p.telegram === "string") setTelegram(p.telegram);
-        setWebUserId(
-          typeof p.webUserId === "string" && p.webUserId
-            ? p.webUserId
-            : newWebUserId(),
-        );
-      } else {
-        setWebUserId(newWebUserId());
+        if (typeof p.webUserId === "string" && p.webUserId) storedId = p.webUserId;
       }
     } catch {
       // corrupt or unavailable storage — fall through to defaults
-      setWebUserId(newWebUserId());
     }
+
     // Test bypass: seed a throwaway identity so onboarding is "complete" and
     // chat (greeting, userId) works without clicking through the flow.
     if (SKIP_ONBOARDING) {
+      setWebUserId(storedId || newWebUserId());
       setAuthMethod((m) => m ?? "google");
       setName((n) => n || "Tester");
+      setHydrated(true);
+      return;
     }
-    setHydrated(true);
+
+    // Logged in per localStorage — trust it and go.
+    if (hadAuth) {
+      setWebUserId(storedId || newWebUserId());
+      setHydrated(true);
+      return;
+    }
+
+    // No local session. Before deciding the user is logged out, try the httpOnly
+    // session cookie — this is what keeps a login alive after the browser drops
+    // localStorage (common in in-app browsers).
+    let alive = true;
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((s: { webUserId?: string; email?: string; name?: string }) => {
+        if (!alive) return;
+        if (s && s.webUserId) {
+          setWebUserId(s.webUserId);
+          if (s.email) setEmail(s.email);
+          if (s.name) setName(s.name);
+          setAuthMethod("email");
+        } else {
+          setWebUserId(storedId || newWebUserId());
+        }
+      })
+      .catch(() => {
+        if (alive) setWebUserId(storedId || newWebUserId());
+      })
+      .finally(() => {
+        if (alive) setHydrated(true);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -128,21 +163,8 @@ export function OnboardingProvider({
     webUserId,
   ]);
 
-  // Once the user is authenticated, ensure their wallet exists via the server
-  // proxy (idempotent, best-effort). Fires once; retries if the call fails.
-  const walletEnsured = useRef(false);
-  useEffect(() => {
-    if (!hydrated || walletEnsured.current) return;
-    if (!authMethod || !webUserId) return;
-    walletEnsured.current = true;
-    fetch("/api/wallet", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ userId: webUserId }),
-    }).catch(() => {
-      walletEnsured.current = false;
-    });
-  }, [hydrated, authMethod, webUserId]);
+  // The account wallet is provisioned + polled by WalletProvider (which owns the
+  // wallet lifecycle), keyed off this same webUserId.
 
   const toggle =
     (setter: React.Dispatch<React.SetStateAction<Set<number>>>) =>
@@ -160,6 +182,8 @@ export function OnboardingProvider({
     } catch {
       // ignore
     }
+    // Clear the server session cookie too, else /api/auth/me would restore.
+    void fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     setName("");
     setEmail("");
     setAuthMethod(null);

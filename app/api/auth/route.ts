@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { SESSION_COOKIE, encodeSession } from "@/lib/session";
 
 // Same-origin proxy to brain's email/password auth. brain's URL stays server-only
 // (BRAIN_URL, never NEXT_PUBLIC_). Returns { webUserId, email } on success or an
@@ -29,7 +30,21 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({ email, password }),
     });
     const data = await upstream.json().catch(() => ({}));
-    return NextResponse.json(data, { status: upstream.status });
+    const res = NextResponse.json(data, { status: upstream.status });
+    // On success, plant an httpOnly session cookie so the login survives the
+    // browser clearing localStorage (common in in-app browsers). The cookie is
+    // read back server-side by /api/auth/me to restore the profile.
+    const webUserId = (data as { webUserId?: unknown }).webUserId;
+    if (upstream.ok && typeof webUserId === "string" && webUserId) {
+      res.cookies.set(SESSION_COOKIE, encodeSession(data), {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+      });
+    }
+    return res;
   } catch {
     return NextResponse.json({ error: "auth service unreachable" }, { status: 502 });
   }
