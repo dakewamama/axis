@@ -1,40 +1,33 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { AxisGlyph } from "@/components/AxisMark";
 import { AddMoneySheet } from "@/components/AddMoneySheet";
 import { PlacesSheet } from "@/components/PlacesSheet";
-import { SettingsSheet } from "@/components/SettingsSheet";
 import { useOnboarding } from "@/components/OnboardingProvider";
 import { useWallet } from "@/components/WalletProvider";
 import { useLocation } from "@/components/LocationProvider";
-import { useGuard } from "@/components/useGuard";
-import { HOME_SHORTCUTS } from "@/lib/data";
 import { NGN, relativeDay } from "@/lib/format";
+
+const EXAMPLES = [
+  "does nadia have chicken wings",
+  "cheapest ride to yaba right now",
+  "₦2k airtime on my 0803 line",
+  "pay my Ikeja Electric bill",
+];
 
 export default function HomePage() {
   const router = useRouter();
-  useGuard("complete");
-  const { name, services } = useOnboarding();
+  const { name, reset } = useOnboarding();
   const { activeLabel } = useLocation();
   const { balance, usdc, live, entries, axisAddress } = useWallet();
   const [draft, setDraft] = useState("");
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [placesOpen, setPlacesOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const firstName = name.trim();
-
-  // Shortcuts the user opted into (in onboarding /services) float to the front.
-  const examples = useMemo(() => {
-    const picked = (s: { vertical?: number }) =>
-      s.vertical === undefined || services.has(s.vertical);
-    return [...HOME_SHORTCUTS]
-      .sort((a, b) => Number(picked(b)) - Number(picked(a)))
-      .map((s) => s.prompt);
-  }, [services]);
 
   function ask(text: string) {
     if (text.trim()) router.push(`/chat?q=${encodeURIComponent(text.trim())}`);
@@ -42,15 +35,14 @@ export default function HomePage() {
 
   return (
     <PhoneFrame>
-      <div className="flex flex-1 animate-rise flex-col overflow-hidden">
+      <main className="flex flex-1 animate-rise flex-col overflow-hidden">
         <div className="flex shrink-0 items-center gap-2 px-5 pt-4 pb-2">
-          <button
-            onClick={() => setSettingsOpen(true)}
-            aria-label="Settings"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-ink transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream focus-visible:outline-none"
+          <span
+            aria-hidden="true"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-ink"
           >
             <AxisGlyph size={18} />
-          </button>
+          </span>
           <button
             onClick={() => setPlacesOpen(true)}
             className="flex min-w-0 items-center gap-1.5 rounded-full px-2 py-1.5 transition-colors hover:bg-white focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
@@ -108,7 +100,7 @@ export default function HomePage() {
             />
             <div className="flex items-center justify-between pt-1 pl-3">
               <span className="text-[11px] text-faint">
-                Airtime · data · top-ups
+                Food · rides · bills · money
               </span>
               <button
                 onClick={() => ask(draft)}
@@ -122,7 +114,7 @@ export default function HomePage() {
           </div>
 
           <div className="mt-5 flex flex-col gap-1.5">
-            {examples.map((e) => (
+            {EXAMPLES.map((e) => (
               <button
                 key={e}
                 onClick={() => ask(e)}
@@ -144,49 +136,45 @@ export default function HomePage() {
               Activity
             </span>
             <span className="text-[11px] text-faint">
-              {entries.length} {entries.length === 1 ? "entry" : "entries"}
+              {entries.length}{" "}
+              {entries.length === 1 ? "entry" : "entries"}
             </span>
           </div>
           <div>
-            {entries.length === 0 ? (
-              <p className="py-6 text-center text-[13px] text-faint">
-                Nothing here yet. Add money or make a request to get started.
-              </p>
-            ) : (
-              entries.slice(0, 8).map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-baseline justify-between gap-3 border-b border-line py-3.5 last:border-0"
+            {entries.slice(0, 8).map((t) => (
+              <div
+                key={t.id}
+                className="flex items-baseline justify-between gap-3 border-b border-line py-3.5 last:border-0"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-semibold text-ink">
+                    {t.label}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-faint">
+                    {relativeDay(t.at)}
+                  </span>
+                 </span>
+                <span
+                  className={`text-[14px] font-bold whitespace-nowrap ${
+                    t.positive ? "text-red-deep" : "text-ink"
+                  }`}
                 >
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-1.5">
-                      <span className="truncate text-[14px] font-semibold text-ink">
-                        {t.label}
-                      </span>
-                      {!t.confirmed && (
-                        <span className="shrink-0 rounded-full bg-line px-1.5 py-0.5 text-[9px] font-bold tracking-[0.06em] text-faint uppercase">
-                          Demo
-                        </span>
-                      )}
-                    </span>
-                    <span className="mt-0.5 block text-[11px] text-faint">
-                      {relativeDay(t.at)}
-                    </span>
-                  </span>
-                  <span
-                    className={`text-[14px] font-bold whitespace-nowrap ${
-                      t.positive ? "text-red-deep" : "text-ink"
-                    }`}
-                  >
-                    {t.positive ? "+" : "−"}
-                    {t.display}
-                  </span>
-                </div>
-              ))
-            )}
+                  {t.positive ? "+" : "−"}
+                  {NGN(Math.abs(t.amount))}
+                </span>
+              </div>
+            ))}
           </div>
 
-          <div className="h-8" />
+          <button
+            onClick={() => {
+              reset();
+              router.replace("/");
+            }}
+            className="mt-6 mb-8 w-full rounded-full py-3 text-[12.5px] font-semibold text-faint transition-colors hover:bg-line hover:text-ink"
+          >
+            Start over
+          </button>
         </div>
 
         <PlacesSheet open={placesOpen} onClose={() => setPlacesOpen(false)} />
@@ -195,12 +183,7 @@ export default function HomePage() {
           onClose={() => setTopUpOpen(false)}
           axisAddress={axisAddress}
         />
-        <SettingsSheet
-          open={settingsOpen}
-          onClose={() => setSettingsOpen(false)}
-          onAddMoney={() => setTopUpOpen(true)}
-        />
-      </div>
+      </main>
     </PhoneFrame>
   );
 }

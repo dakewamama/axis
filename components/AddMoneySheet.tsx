@@ -113,8 +113,8 @@ function DepositView({ owner, onClose }: { owner: string; onClose: () => void })
         </span>
       </button>
       <p className="mt-3 text-[12.5px] text-faint">
-        Send only USDC on Solana to this address. Sending any other token or
-        network can lose the funds.
+        Send USDC or SOL on Solana to this address — both are credited
+        automatically. Other tokens or networks may be lost.
       </p>
 
       {credited !== null && (
