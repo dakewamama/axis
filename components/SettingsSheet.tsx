@@ -73,7 +73,7 @@ export function SettingsSheet({
         />
 
         <div className="flex flex-col gap-2">
-          <Row label="Manage services" onClick={() => go("/services")} />
+          <Row label="Services, limits & connected apps" onClick={() => go("/services")} />
           <Row label="Reach channels" onClick={() => go("/channels")} />
           <Row
             label="Add money"

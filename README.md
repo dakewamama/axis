@@ -15,6 +15,7 @@ service URLs and tokens server-side and forward to:
 | `/api/wallet` | onboarding `/wallet`, `/wallet/balance` | provision the custodial wallet, read the spendable balance |
 | `/api/chat` | brain `/web/chat` | the Axis assistant |
 | `/api/location`, `/api/place` | brain `/web/location`, `/web/place` | precise device location; the place you're at (from GPS or a tag) |
+| `/api/settings`, `/api/connections/revoke` | brain `/web/settings`, `/web/connections/revoke` | the user's configuration (`/services`): services on/off, personal spending limits, connected AI apps |
 | `/t/<code>` | none | QR/NFC seat tag link; opens chat on that place and seat |
 
 `lib/funding.ts` calls the onboarding funding API (`NEXT_PUBLIC_FUNDING_API`)

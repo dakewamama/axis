@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
-import { SelectRow } from "@/components/SelectRow";
+import { Configuration } from "@/components/Configuration";
 import { useOnboarding } from "@/components/OnboardingProvider";
 import { useGuard } from "@/components/useGuard";
-import { VERTICALS } from "@/lib/data";
 import { formatPhone } from "@/lib/format";
 
 const AUTH_LABEL: Record<string, string> = {
@@ -18,8 +17,7 @@ const AUTH_LABEL: Record<string, string> = {
 export default function ServicesPage() {
   const router = useRouter();
   useGuard("complete");
-  const { services, toggleService, authMethod, whatsapp, telegram } =
-    useOnboarding();
+  const { authMethod, whatsapp, telegram } = useOnboarding();
   const [request, setRequest] = useState("");
   const [requested, setRequested] = useState(false);
 
@@ -34,10 +32,11 @@ export default function ServicesPage() {
             <span aria-hidden="true">&larr;</span> Home
           </button>
           <h2 className="mb-2 font-display text-[32px] leading-[1.02] font-extrabold tracking-[-0.02em] text-ink">
-            Pick what you&rsquo;ll actually use.
+            What Axis can do for you.
           </h2>
           <p className="text-[13px] leading-[1.5] text-faint">
-            Everything stays available. This just sorts your shortcuts.
+            Your rules apply everywhere Axis acts for you: here, ChatGPT and any
+            other connected app.
           </p>
         </div>
 
@@ -74,24 +73,7 @@ export default function ServicesPage() {
             </button>
           </div>
 
-          <div className="flex flex-col gap-2.5">
-            {VERTICALS.map((v, i) => (
-              <SelectRow
-                key={v.label}
-                label={v.label}
-                note={v.note}
-                selected={services.has(i)}
-                onClick={() => toggleService(i)}
-                badge={
-                  v.waitlist ? (
-                    <span className="shrink-0 rounded-full bg-line px-2 py-1 text-[9px] font-extrabold tracking-[0.07em] text-faint uppercase">
-                      Waitlist
-                    </span>
-                  ) : undefined
-                }
-              />
-            ))}
-          </div>
+          <Configuration />
 
           <div className="py-4 pb-6">
             <div className="rounded-[22px] bg-white p-[18px] shadow-lift">
@@ -124,7 +106,7 @@ export default function ServicesPage() {
 
         <div className="flex items-center gap-3 bg-cream px-6 pt-3.5 pb-4 shadow-[0_-1px_0_var(--color-line)]">
           <span className="flex-1 text-xs text-faint">
-            {services.size} selected
+            Applies to every app connected to Axis
           </span>
           <button
             onClick={() => router.push("/home")}
