@@ -1,15 +1,15 @@
-import { NextResponse } from "next/server";
-import { SESSION_COOKIE } from "@/lib/session";
+import { NextRequest, NextResponse } from "next/server";
+import { brain, brainConfigured } from "@/lib/brain";
+import { clearSessionCookie, readSession } from "@/lib/session";
 
-// Clear the session cookie. Called from the client's reset()/sign-out.
-export async function POST() {
+// Revoke the brain session, then clear the cookie. The cookie is cleared even if
+// brain is unreachable; the brain session then expires on its own.
+export async function POST(req: NextRequest) {
+  const session = readSession(req);
+  if (session && brainConfigured()) {
+    await brain(req, "logout", { body: {}, userToken: session.token }).catch(() => undefined);
+  }
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(SESSION_COOKIE, "", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
+  clearSessionCookie(res);
   return res;
 }

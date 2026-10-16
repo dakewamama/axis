@@ -10,17 +10,21 @@ service URLs and tokens server-side and forward to:
 
 | Route | Upstream | Purpose |
 |---|---|---|
-| `/api/auth`, `/api/auth/name` | brain `/auth/*` | email/password account, display name |
-| `/api/auth/me`, `/api/auth/logout` | none | read or clear the session cookie |
+| `/api/auth`, `/api/auth/name` | brain `/web/signup`, `/web/login`, `/web/name` | email/password account, display name |
+| `/api/auth/me`, `/api/auth/logout` | brain `/web/me`, `/web/logout` | restore the session, sign out (revokes the brain session) |
 | `/api/wallet` | onboarding `/wallet`, `/wallet/balance` | provision the custodial wallet, read the spendable balance |
-| `/api/chat` | brain `/webhooks/web` | chat messages |
+| `/api/chat` | brain `/web/chat` | the Axis assistant |
 
 `lib/funding.ts` calls the onboarding funding API (`NEXT_PUBLIC_FUNDING_API`)
 directly from the browser for deposit addresses and deposit history.
 
 ## Sessions and security
 
-Sign-in sets an httpOnly cookie signed with HMAC-SHA256 (`AXIS_SESSION_SECRET`).
+Every call to brain carries `AXIS_WEB_TOKEN`, which must match brain's. Sign-in
+returns a 30-day brain session token for that user; it is stored only inside an
+httpOnly cookie signed with HMAC-SHA256 (`AXIS_SESSION_SECRET`) and never returned
+to the browser. brain authenticates every chat and name request with that token,
+so the assistant can only do what the user's account may do (no spending).
 Wallet, chat and name routes act only for the user in a valid signed session;
 any `userId` in a request body or query is ignored. A missing or invalid cookie
 gets `401`. Without `AXIS_SESSION_SECRET`, sign-in is refused (`503`).
@@ -31,10 +35,9 @@ address, or a banned compliance claim.
 
 ## Known limitations
 
-- Auth and chat call brain's legacy conversational server (`brain/src/server.ts`).
-  The hosted brain runs the MCP entrypoint (`dist/mcp/main.js`), which does not
-  serve `/auth/*` or `/webhooks/web`, so those features need the legacy server
-  deployed separately.
+- Chat replies are plain text; the assistant does not yet send button or list cards.
+- Sessions issued before this change carry no brain token, so those users are
+  asked to sign in again.
 - Activity history is empty: there is no deposit-history feed wired into the
   wallet view yet.
 

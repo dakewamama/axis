@@ -10,7 +10,7 @@ import { SKIP_ONBOARDING } from "@/lib/flags";
 
 export default function NamePage() {
   const router = useRouter();
-  const { name, setName, webUserId } = useOnboarding();
+  const { name, setName } = useOnboarding();
   useGuard("authed");
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function NamePage() {
     void fetch("/api/auth/name", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ webUserId, name: trimmed }),
+      body: JSON.stringify({ name: trimmed }),
     }).catch(() => {});
     router.push("/channels");
   }

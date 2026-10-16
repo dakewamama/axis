@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { brain, brainConfigured } from "@/lib/brain";
 import { sessionsConfigured, setSessionCookie } from "@/lib/session";
 
-// Same-origin proxy to brain's email/password auth. brain's URL stays server-only
-// (BRAIN_URL, never NEXT_PUBLIC_). Returns { webUserId, email } on success or an
-// { error } the form shows.
-const BRAIN_URL = process.env.BRAIN_URL?.replace(/\/$/, "");
-
+// Same-origin proxy to brain's email/password accounts. On success brain returns
+// the account and a session token; the token goes only into the signed httpOnly
+// cookie, and the browser gets { webUserId, email, name } or an { error }.
 export async function POST(req: NextRequest) {
-  if (!BRAIN_URL || !sessionsConfigured()) {
+  if (!brainConfigured() || !sessionsConfigured()) {
     return NextResponse.json({ error: "auth is not configured" }, { status: 503 });
   }
   let body: unknown;
@@ -24,20 +23,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "email and password are required" }, { status: 400 });
   }
   try {
-    const upstream = await fetch(`${BRAIN_URL}/auth/${mode}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await upstream.json().catch(() => ({}));
-    const res = NextResponse.json(data, { status: upstream.status });
-    // On success, plant an httpOnly session cookie so the login survives the
-    // browser clearing localStorage (common in in-app browsers). The cookie is
-    // read back server-side by /api/auth/me to restore the profile.
-    const webUserId = (data as { webUserId?: unknown }).webUserId;
-    if (upstream.ok && typeof webUserId === "string" && webUserId) {
-      setSessionCookie(res, data as Record<string, unknown>);
+    const { status, data } = await brain(req, mode, { body: { email, password } });
+    if (status !== 200 || typeof data.token !== "string" || typeof data.webUserId !== "string") {
+      return NextResponse.json({ error: data.error ?? "sign-in failed", code: data.code }, { status: status === 200 ? 502 : status });
     }
+    const res = NextResponse.json({ webUserId: data.webUserId, email: data.email, name: data.name ?? "" });
+    setSessionCookie(res, data);
     return res;
   } catch {
     return NextResponse.json({ error: "auth service unreachable" }, { status: 502 });

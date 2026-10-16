@@ -91,7 +91,7 @@ export default function AuthPage() {
           autoComplete={signup ? "new-password" : "current-password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder={signup ? "At least 8 characters" : "Your password"}
+          placeholder={signup ? "At least 12 characters" : "Your password"}
           className="h-12 rounded-[14px] bg-white px-4 text-[16px] text-ink shadow-card outline-none focus-visible:ring-2 focus-visible:ring-ink"
         />
 

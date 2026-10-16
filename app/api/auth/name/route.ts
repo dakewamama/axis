@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { brain, brainConfigured } from "@/lib/brain";
 import { readSession, setSessionCookie } from "@/lib/session";
 
-// Same-origin proxy to brain's /auth/name. Persists the display name onto the
-// signed-in account (webUserId from the verified session, never the body). brain's URL stays
-// server-only (BRAIN_URL, never NEXT_PUBLIC_).
-const BRAIN_URL = process.env.BRAIN_URL?.replace(/\/$/, "");
-
+// Persist the display name onto the signed-in account through brain, which
+// identifies the user from their session token, never from the request body.
 export async function POST(req: NextRequest) {
-  if (!BRAIN_URL) {
+  if (!brainConfigured()) {
     return NextResponse.json({ error: "auth is not configured" }, { status: 503 });
   }
   let body: unknown;
@@ -18,23 +16,14 @@ export async function POST(req: NextRequest) {
   }
   const session = readSession(req);
   if (!session) return NextResponse.json({ error: "not signed in" }, { status: 401 });
-  const webUserId = session.webUserId;
   const b = (body ?? {}) as Record<string, unknown>;
-  const name = typeof b.name === "string" ? b.name : "";
-  if (!name.trim()) {
-    return NextResponse.json({ error: "name is required" }, { status: 400 });
-  }
+  const name = typeof b.name === "string" ? b.name.trim() : "";
+  if (!name) return NextResponse.json({ error: "name is required" }, { status: 400 });
   try {
-    const upstream = await fetch(`${BRAIN_URL}/auth/name`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ webUserId, name }),
-    });
-    const data = await upstream.json().catch(() => ({}));
-    const res = NextResponse.json(data, { status: upstream.status });
-    // Keep the session cookie's name in sync so a cookie-restored profile shows
-    // the name the user just set (not the "" from signup).
-    if (upstream.ok) setSessionCookie(res, { ...session, name });
+    const { status, data } = await brain(req, "name", { body: { name }, userToken: session.token });
+    const res = NextResponse.json(data, { status });
+    // Keep the cookie's name in sync so a cookie-restored profile shows it.
+    if (status === 200) setSessionCookie(res, { ...session, name: name.slice(0, 80) });
     return res;
   } catch {
     return NextResponse.json({ error: "auth service unreachable" }, { status: 502 });
