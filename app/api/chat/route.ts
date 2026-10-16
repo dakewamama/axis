@@ -17,11 +17,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
   }
   const b = (body ?? {}) as Record<string, unknown>;
-  // Button taps arrive as buttonId; the assistant reads them as the user's text.
-  const text = typeof b.text === "string" && b.text.trim() ? b.text : typeof b.buttonId === "string" ? b.buttonId : "";
-  if (!text) return NextResponse.json({ error: "text is required" }, { status: 400 });
+  // Button taps (e.g. Approve/Decline on a payment) go to brain as buttonId:
+  // brain handles payment decisions in fixed code, never through the model.
+  const buttonId = typeof b.buttonId === "string" && b.buttonId ? b.buttonId.slice(0, 100) : "";
+  const text = typeof b.text === "string" ? b.text.trim().slice(0, 2000) : "";
+  if (!text && !buttonId) return NextResponse.json({ error: "text is required" }, { status: 400 });
   try {
-    const { status, data } = await brain(req, "chat", { body: { text: text.slice(0, 2000) }, userToken: session.token, timeoutMs: 60000 });
+    const { status, data } = await brain(req, "chat", { body: buttonId ? { buttonId } : { text }, userToken: session.token, timeoutMs: 60000 });
     return NextResponse.json(data, { status });
   } catch {
     return NextResponse.json({ error: "chat service unreachable" }, { status: 502 });

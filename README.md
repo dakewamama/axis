@@ -35,7 +35,7 @@ address, or a banned compliance claim.
 
 ## Known limitations
 
-- Chat replies are plain text; the assistant does not yet send button or list cards.
+- Chat shows payment Approve/Decline cards; other replies are plain text.
 - Sessions issued before this change carry no brain token, so those users are
   asked to sign in again.
 - Activity history is empty: there is no deposit-history feed wired into the
