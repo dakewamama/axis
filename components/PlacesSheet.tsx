@@ -11,7 +11,7 @@ export function PlacesSheet({
   open: boolean;
   onClose: () => void;
 }) {
-  const { places, selected, current, select, addPlace, useCurrentLocation } =
+  const { places, selected, current, select, addPlace, locateCurrent } =
     useLocation();
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
@@ -28,7 +28,7 @@ export function PlacesSheet({
   async function pickCurrent() {
     setError("");
     setLocating(true);
-    const err = await useCurrentLocation();
+    const err = await locateCurrent();
     setLocating(false);
     if (err) setError(err);
     else close();

@@ -160,7 +160,7 @@ export default function HomePage() {
                   }`}
                 >
                   {t.positive ? "+" : "−"}
-                  {NGN(Math.abs(t.amount))}
+                  {t.display}
                 </span>
               </div>
             ))}

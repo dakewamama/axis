@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readSession } from "@/lib/session";
 
 // Same-origin proxy to the onboarding service's /wallet (idempotent). ONBOARDING_URL
 // and INTERNAL_API_TOKEN are read only here on the server, never shipped to the
-// browser and never NEXT_PUBLIC_.
+// browser and never NEXT_PUBLIC_. The user is always the verified session's
+// webUserId; a userId in the query or body is ignored.
 const ONBOARDING_URL = process.env.ONBOARDING_URL?.replace(/\/$/, "");
 const INTERNAL_API_TOKEN = process.env.INTERNAL_API_TOKEN;
 
@@ -14,14 +16,14 @@ export async function GET(req: NextRequest) {
       { status: 503 },
     );
   }
-  const userId = req.nextUrl.searchParams.get("userId") ?? "";
+  const userId = readSession(req)?.webUserId;
   if (!userId) {
-    return NextResponse.json({ error: "userId is required" }, { status: 400 });
+    return NextResponse.json({ error: "not signed in" }, { status: 401 });
   }
   try {
     const upstream = await fetch(
       `${ONBOARDING_URL}/wallet/balance?userId=${encodeURIComponent(userId)}`,
-      { headers: { authorization: `Bearer ${INTERNAL_API_TOKEN}` } },
+      { headers: { authorization: `Bearer ${INTERNAL_API_TOKEN}` }, signal: AbortSignal.timeout(15000) },
     );
     const data = await upstream.json().catch(() => ({}));
     return NextResponse.json(data, { status: upstream.status });
@@ -38,17 +40,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
-  }
-  const userId = typeof (body as { userId?: unknown })?.userId === "string"
-    ? (body as { userId: string }).userId
-    : "";
+  const userId = readSession(req)?.webUserId;
   if (!userId) {
-    return NextResponse.json({ error: "userId is required" }, { status: 400 });
+    return NextResponse.json({ error: "not signed in" }, { status: 401 });
   }
 
   try {
@@ -59,6 +53,7 @@ export async function POST(req: NextRequest) {
         authorization: `Bearer ${INTERNAL_API_TOKEN}`,
       },
       body: JSON.stringify({ userId }),
+      signal: AbortSignal.timeout(15000),
     });
     const data = await upstream.json().catch(() => ({}));
     return NextResponse.json(data, { status: upstream.status });

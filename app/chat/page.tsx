@@ -92,6 +92,8 @@ function ChatThread() {
     } catch {
       // ignore corrupt/unavailable storage
     }
+    // Marks localStorage restoration done; runs once after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setChatHydrated(true);
   }, [webUserId, chatHydrated]);
 

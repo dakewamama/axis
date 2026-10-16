@@ -66,7 +66,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/wallet", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ userId: webUserId }),
+        body: "{}",
       });
       const data = (await res.json().catch(() => ({}))) as { address?: string };
       if (res.ok && data.address) {
@@ -81,7 +81,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     } finally {
       provisioning.current = false;
     }
-  }, [authed, address, webUserId]);
+  }, [authed, address]);
 
   // Poll spendable balance (deposits minus spends) for the user's wallet.
   const refresh = useCallback(async () => {
@@ -91,9 +91,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      const res = await fetch(
-        `/api/wallet?userId=${encodeURIComponent(webUserId)}`,
-      );
+      const res = await fetch("/api/wallet");
       if (!res.ok) return;
       const data = (await res.json().catch(() => ({}))) as {
         usdc?: number;
@@ -104,15 +102,19 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // transient — next tick retries
     }
-  }, [authed, address, webUserId, ensureWallet]);
+  }, [authed, address, ensureWallet]);
 
   useEffect(() => {
     if (!authed) return;
+    // Syncing with the wallet service once signed in; state updates after the request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void ensureWallet();
   }, [authed, ensureWallet]);
 
   useEffect(() => {
     if (!authed) return;
+    // Polling an external balance; state updates after each request resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
     timer.current = setInterval(() => void refresh(), 8000);
     return () => {

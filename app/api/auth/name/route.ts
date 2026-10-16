@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE, decodeSession, encodeSession } from "@/lib/session";
+import { readSession, setSessionCookie } from "@/lib/session";
 
 // Same-origin proxy to brain's /auth/name. Persists the display name onto the
-// account (keyed by webUserId) so login restores the profile. brain's URL stays
+// signed-in account (webUserId from the verified session, never the body). brain's URL stays
 // server-only (BRAIN_URL, never NEXT_PUBLIC_).
 const BRAIN_URL = process.env.BRAIN_URL?.replace(/\/$/, "");
 
@@ -16,11 +16,13 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
   }
+  const session = readSession(req);
+  if (!session) return NextResponse.json({ error: "not signed in" }, { status: 401 });
+  const webUserId = session.webUserId;
   const b = (body ?? {}) as Record<string, unknown>;
-  const webUserId = typeof b.webUserId === "string" ? b.webUserId : "";
   const name = typeof b.name === "string" ? b.name : "";
-  if (!webUserId || !name.trim()) {
-    return NextResponse.json({ error: "webUserId and name are required" }, { status: 400 });
+  if (!name.trim()) {
+    return NextResponse.json({ error: "name is required" }, { status: 400 });
   }
   try {
     const upstream = await fetch(`${BRAIN_URL}/auth/name`, {
@@ -32,18 +34,7 @@ export async function POST(req: NextRequest) {
     const res = NextResponse.json(data, { status: upstream.status });
     // Keep the session cookie's name in sync so a cookie-restored profile shows
     // the name the user just set (not the "" from signup).
-    if (upstream.ok) {
-      const current = decodeSession(req.cookies.get(SESSION_COOKIE)?.value);
-      if (current && current.webUserId === webUserId) {
-        res.cookies.set(SESSION_COOKIE, encodeSession({ ...current, name }), {
-          httpOnly: true,
-          secure: true,
-          sameSite: "lax",
-          path: "/",
-          maxAge: 60 * 60 * 24 * 365,
-        });
-      }
-    }
+    if (upstream.ok) setSessionCookie(res, { ...session, name });
     return res;
   } catch {
     return NextResponse.json({ error: "auth service unreachable" }, { status: 502 });

@@ -73,6 +73,8 @@ export function OnboardingProvider({
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const p = JSON.parse(raw) as Partial<Persisted>;
+        // Restoring the saved profile from localStorage after mount (not available during SSR).
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (typeof p.name === "string") setName(p.name);
         if (typeof p.email === "string") setEmail(p.email);
         if (p.authMethod) {

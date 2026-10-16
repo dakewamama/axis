@@ -29,7 +29,7 @@ type LocationState = {
   addPlace: (label: string) => void;
   /** Ask the browser for the real device location. Resolves to an error string
    *  on failure (permission denied / unavailable), or null on success. */
-  useCurrentLocation: () => Promise<string | null>;
+  locateCurrent: () => Promise<string | null>;
   activeLabel: string;
   activeDetail: string;
   reset: () => void;
@@ -49,6 +49,8 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const p = JSON.parse(raw) as Partial<Persisted>;
+        // Restoring saved places from localStorage after mount (not available during SSR).
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (Array.isArray(p.places)) setPlaces(p.places);
         if (p.selected === "current" || typeof p.selected === "number") {
           setSelected(p.selected);
@@ -81,7 +83,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     });
   }
 
-  function useCurrentLocation(): Promise<string | null> {
+  function locateCurrent(): Promise<string | null> {
     return new Promise((resolve) => {
       if (typeof navigator === "undefined" || !navigator.geolocation) {
         resolve("Location isn't available on this device.");
@@ -139,7 +141,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         current,
         select: setSelected,
         addPlace,
-        useCurrentLocation,
+        locateCurrent,
         activeLabel,
         activeDetail,
         reset,

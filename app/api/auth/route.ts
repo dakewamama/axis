@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE, encodeSession } from "@/lib/session";
+import { sessionsConfigured, setSessionCookie } from "@/lib/session";
 
 // Same-origin proxy to brain's email/password auth. brain's URL stays server-only
 // (BRAIN_URL, never NEXT_PUBLIC_). Returns { webUserId, email } on success or an
@@ -7,7 +7,7 @@ import { SESSION_COOKIE, encodeSession } from "@/lib/session";
 const BRAIN_URL = process.env.BRAIN_URL?.replace(/\/$/, "");
 
 export async function POST(req: NextRequest) {
-  if (!BRAIN_URL) {
+  if (!BRAIN_URL || !sessionsConfigured()) {
     return NextResponse.json({ error: "auth is not configured" }, { status: 503 });
   }
   let body: unknown;
@@ -36,13 +36,7 @@ export async function POST(req: NextRequest) {
     // read back server-side by /api/auth/me to restore the profile.
     const webUserId = (data as { webUserId?: unknown }).webUserId;
     if (upstream.ok && typeof webUserId === "string" && webUserId) {
-      res.cookies.set(SESSION_COOKIE, encodeSession(data), {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 365,
-      });
+      setSessionCookie(res, data as Record<string, unknown>);
     }
     return res;
   } catch {

@@ -1,4 +1,3 @@
-import { StatusBar } from "./StatusBar";
 
 export function PhoneFrame({ children }: { children: React.ReactNode }) {
   return (
