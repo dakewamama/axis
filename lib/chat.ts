@@ -70,3 +70,15 @@ export async function sendToBrain(input: {
   const data = (await res.json()) as ChatResponse;
   return data.replies ?? [];
 }
+
+/** "Location blink": the place the user is at (tag code, else latest precise location). */
+export async function placeHere(code?: string): Promise<OutboundMessage[]> {
+  const res = await fetch("/api/place", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(code ? { code } : {}),
+  });
+  if (!res.ok) throw new Error(`place ${res.status}`);
+  const data = (await res.json()) as ChatResponse;
+  return data.replies ?? [];
+}

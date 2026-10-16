@@ -8,9 +8,14 @@ export type Place = {
   tag?: string;
 };
 
-export type Coords = { lat: number; lng: number };
+/** accuracy: the device's confidence radius in metres. */
+export type Coords = { lat: number; lng: number; accuracy?: number };
 
 const KEY = "axis:location:v1";
+/** Stop early once the fix is this precise (metres). */
+const GOOD_ENOUGH_M = 20;
+/** Longest we wait for GPS to settle. */
+const LOCATE_MS = 15000;
 
 type Selection = number | "current";
 
@@ -89,21 +94,39 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         resolve("Location isn't available on this device.");
         return;
       }
-      navigator.geolocation.getCurrentPosition(
+      // The first fix is often Wi-Fi/cell-tower grade (100 m+). Keep listening
+      // for GPS until it is good enough to tell neighbouring places apart, or
+      // until time runs out, and keep the most accurate reading.
+      let best: GeolocationPosition | null = null;
+      let done = false;
+      const finish = (error: string | null) => {
+        if (done) return;
+        done = true;
+        navigator.geolocation.clearWatch(watch);
+        clearTimeout(timer);
+        if (!best) return resolve(error ?? "Couldn't get your location. Try again.");
+        const fix = { lat: best.coords.latitude, lng: best.coords.longitude, accuracy: best.coords.accuracy };
+        setCurrent(fix);
+        setSelected("current");
+        // brain keeps it 15 minutes for "where am I" / pay-here; best-effort.
+        void fetch("/api/location", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ latitude: fix.lat, longitude: fix.lng, accuracyM: fix.accuracy }),
+        }).catch(() => {});
+        resolve(null);
+      };
+      const watch = navigator.geolocation.watchPosition(
         (pos) => {
-          setCurrent({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setSelected("current");
-          resolve(null);
+          if (!best || pos.coords.accuracy < best.coords.accuracy) best = pos;
+          if (pos.coords.accuracy <= GOOD_ENOUGH_M) finish(null);
         },
         (err) => {
-          resolve(
-            err.code === err.PERMISSION_DENIED
-              ? "Location permission was denied."
-              : "Couldn't get your location. Try again.",
-          );
+          if (err.code === err.PERMISSION_DENIED) finish("Location permission was denied.");
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+        { enableHighAccuracy: true, timeout: LOCATE_MS, maximumAge: 0 },
       );
+      const timer = setTimeout(() => finish(null), LOCATE_MS);
     });
   }
 
@@ -128,7 +151,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const activeDetail =
     selected === "current"
       ? current
-        ? `${current.lat.toFixed(4)}, ${current.lng.toFixed(4)}`
+        ? `${current.lat.toFixed(5)}, ${current.lng.toFixed(5)}${current.accuracy !== undefined ? ` · ±${Math.round(current.accuracy)} m` : ""}`
         : "Tap to set your delivery location"
       : (active?.detail ?? "");
 

@@ -21,6 +21,7 @@ import {
   type Card,
   type Message,
   repliesToMessages,
+  placeHere,
   sendToBrain,
   userMessage,
 } from "@/lib/chat";
@@ -63,11 +64,12 @@ function ChatThread() {
   const router = useRouter();
   const params = useSearchParams();
   const seed = params.get("q")?.slice(0, 256).trim() ?? "";
+  const tag = params.get("tag") ?? "";
   useGuard("complete", { preserveQuery: true });
 
   const { name, webUserId } = useOnboarding();
   const { balance } = useWallet();
-  const { activeLabel, activeDetail } = useLocation();
+  const { activeLabel, locateCurrent } = useLocation();
 
   const [messages, dispatch] = useReducer(reducer, []);
   const [draft, setDraft] = useState("");
@@ -139,6 +141,38 @@ function ChatThread() {
     },
     [webUserId, name],
   );
+
+  /** "Location blink": precise fix (or a scanned tag), then the place card from brain. */
+  const showPlace = useCallback(async (code?: string) => {
+    setTyping(true);
+    try {
+      if (!code) {
+        const error = await locateCurrent();
+        if (error) {
+          dispatch({ type: "append", messages: repliesToMessages([{ kind: "text", text: error }]) });
+          return;
+        }
+      }
+      dispatch({ type: "append", messages: repliesToMessages(await placeHere(code)) });
+    } catch {
+      dispatch({
+        type: "append",
+        messages: repliesToMessages([{ kind: "text", text: "I couldn't check where you are just now. Try again." }]),
+      });
+    } finally {
+      setTyping(false);
+    }
+  }, [locateCurrent]);
+
+  // Opened from a QR/NFC tag (/t/<code>): show that exact place and seat once.
+  const tagged = useRef(false);
+  useEffect(() => {
+    if (tag && webUserId && chatHydrated && !tagged.current) {
+      tagged.current = true;
+      void showPlace(tag);
+      router.replace("/chat");
+    }
+  }, [tag, webUserId, chatHydrated, showPlace, router]);
 
   function submitDraft() {
     const text = draft.trim();
@@ -217,12 +251,10 @@ function ChatThread() {
                     ? send({ text: title, display: title })
                     : send({ buttonId: id, display: title })
                 }
-                onShareLocation={() =>
-                  send({
-                    text: activeDetail || activeLabel,
-                    display: `📍 ${activeLabel}`,
-                  })
-                }
+                onShareLocation={() => {
+                  dispatch({ type: "append", messages: [userMessage(`📍 ${activeLabel}`)] });
+                  void showPlace();
+                }}
               />
             ),
           )}
