@@ -1,11 +1,9 @@
 export function Bubble({
   who,
-  badge,
   text,
   time,
 }: {
   who: "user" | "axis";
-  badge?: string;
   text: string;
   time: string;
 }) {
@@ -23,14 +21,6 @@ export function Bubble({
             : "rounded-[22px_22px_22px_6px] bg-white text-ink"
         }`}
       >
-        {badge && (
-          <div className="mb-[7px] flex items-center gap-1.5">
-            <span className="h-[5px] w-[5px] rounded-full bg-red" />
-            <span className="text-[9.5px] font-bold tracking-[0.09em] text-red-deep uppercase">
-              {badge}
-            </span>
-          </div>
-        )}
         <div className="text-[14.5px] leading-[1.5] whitespace-pre-line text-pretty">
           {text}
         </div>

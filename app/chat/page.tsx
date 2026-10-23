@@ -58,6 +58,8 @@ function reducer(state: Message[], action: Action): Message[] {
 }
 
 const CHAT_KEY = (webUserId: string) => `axis:chat:v1:${webUserId}`;
+const NOTICES_KEY = (webUserId: string) => `axis:notices:v1:${webUserId}`;
+const NOTICE_POLL_MS = 15000;
 const MAX_SAVED = 60;
 
 function ChatThread() {
@@ -184,6 +186,42 @@ function ChatThread() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, typing]);
 
+  // Payment updates (paid, failed, being checked) posted after the user last saw
+  // them: shown in the thread as they arrive, each once per device.
+  useEffect(() => {
+    if (!webUserId || !chatHydrated) return;
+    let since: string;
+    try {
+      since = localStorage.getItem(NOTICES_KEY(webUserId)) ?? new Date(Date.now() - 86400000).toISOString();
+    } catch {
+      since = new Date(Date.now() - 86400000).toISOString();
+    }
+    let stopped = false;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/notices?since=${encodeURIComponent(since)}`, { cache: "no-store" });
+        if (!res.ok || stopped) return;
+        const { notices } = (await res.json()) as { notices?: { text: string; at: string }[] };
+        if (!notices?.length) return;
+        since = notices[notices.length - 1]!.at;
+        try {
+          localStorage.setItem(NOTICES_KEY(webUserId), since);
+        } catch {
+          // storage blocked: updates may show again on this device
+        }
+        dispatch({ type: "append", messages: repliesToMessages(notices.map((n) => ({ kind: "text" as const, text: n.text }))) });
+      } catch {
+        // offline: try again next tick
+      }
+    };
+    void poll();
+    const timer = setInterval(() => void poll(), NOTICE_POLL_MS);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
+  }, [webUserId, chatHydrated]);
+
   // A ?q intent (home chip or shared link) is sent once the thread is hydrated,
   // then stripped from the URL so a reload doesn't replay it and the message text
   // doesn't linger in history. Works for returning users too (not just an empty
@@ -305,7 +343,7 @@ function ChatThread() {
   );
 }
 
-// Renders brain's structured replies: buttons, list, location_request, products.
+// Renders brain's structured replies: buttons and location_request.
 function CardView({
   card,
   time,
@@ -354,76 +392,8 @@ function CardView({
     );
   }
 
-  if (card.kind === "products") {
-    return (
-      <div className="flex w-full flex-col items-start gap-2">
-        <Bubble who="axis" text={card.text} time={time} />
-        <div className="ml-1 grid w-full grid-cols-2 gap-2.5">
-          {card.products.map((p, i) => (
-            // Tapping a product starts an in-app order — Axis never links out to
-            // an external store.
-            <button
-              key={`${p.title}-${i}`}
-              onClick={() => onButton(`q:order ${p.title}`, `Order ${p.title}`)}
-              disabled={disabled}
-              className="flex flex-col overflow-hidden rounded-2xl bg-white text-left shadow-card transition-transform hover:-translate-y-0.5 disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
-            >
-              {p.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={p.imageUrl}
-                  alt={p.title}
-                  className="h-28 w-full bg-red-tint object-contain p-2"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="flex h-28 w-full items-center justify-center bg-red-tint text-2xl">
-                  🛍️
-                </div>
-              )}
-              <div className="flex flex-1 flex-col gap-1 p-2.5">
-                <span className="line-clamp-2 text-[12px] leading-snug font-semibold text-ink">
-                  {p.title}
-                </span>
-                {p.price && (
-                  <span className="text-[13px] font-bold text-red">{p.price}</span>
-                )}
-                <span className="mt-auto text-[10px] text-faint">{p.merchant}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // list
-  return (
-    <div className="flex w-full flex-col items-start gap-2">
-      <Bubble who="axis" badge={card.header} text={card.text} time={time} />
-      <div className="ml-1 flex w-[80%] flex-col gap-1.5">
-        {card.sections.flatMap((section) =>
-          section.rows.map((row) => (
-            <button
-              key={row.id}
-              onClick={() => onButton(row.id, row.title)}
-              disabled={disabled}
-              className="w-full rounded-2xl bg-white p-3 text-left shadow-card transition-colors hover:bg-red-tint disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
-            >
-              <span className="block text-[14px] font-bold text-ink">
-                {row.title}
-              </span>
-              {row.description && (
-                <span className="mt-0.5 block text-[12px] text-faint">
-                  {row.description}
-                </span>
-              )}
-            </button>
-          )),
-        )}
-      </div>
-    </div>
-  );
+  // A card kind this version no longer sends (e.g. from a thread saved on this device): show its text.
+  return <Bubble who="axis" text={(card as { text?: string }).text ?? ""} time={time} />;
 }
 
 export default function ChatPage() {

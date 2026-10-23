@@ -1,23 +1,12 @@
-// Mirror of brain's OutboundMessage contract (brain/src/core/types.ts). Kept in
-// sync by hand; the /api/chat proxy passes these straight through untouched.
+// Mirror of the replies brain's /web/chat and /web/place send (Reply in
+// brain/src/web/assistant.ts, plus location_request). Kept in sync by hand; the
+// /api/chat proxy passes them straight through.
 
 export type ReplyButton = { id: string; title: string };
-export type ListRow = { id: string; title: string; description?: string };
-export type ListSection = { title?: string; rows: ListRow[] };
-export type ProductCard = {
-  title: string;
-  price?: string;
-  imageUrl?: string;
-  url: string;
-  merchant: string;
-};
-
 export type OutboundMessage =
   | { kind: "text"; text: string }
   | { kind: "buttons"; text: string; buttons: ReplyButton[] }
-  | { kind: "list"; text: string; header?: string; sections: ListSection[] }
-  | { kind: "location_request"; text: string }
-  | { kind: "products"; text: string; products: ProductCard[] };
+  | { kind: "location_request"; text: string };
 
 /** Any structured (non-plain-text) reply. */
 export type Card = Exclude<OutboundMessage, { kind: "text" }>;
