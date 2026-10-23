@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sheet } from "@/components/Sheet";
 import { useLocation } from "@/components/LocationProvider";
+import { AddressForm } from "@/components/VaultForms";
 
 export function PlacesSheet({
   open,
@@ -11,16 +12,13 @@ export function PlacesSheet({
   open: boolean;
   onClose: () => void;
 }) {
-  const { places, selected, current, select, addPlace, locateCurrent } =
-    useLocation();
+  const { places, selected, current, select, locateCurrent } = useLocation();
   const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState("");
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState("");
 
   function close() {
     setAdding(false);
-    setDraft("");
     setError("");
     onClose();
   }
@@ -32,14 +30,6 @@ export function PlacesSheet({
     setLocating(false);
     if (err) setError(err);
     else close();
-  }
-
-  function save() {
-    if (!draft.trim()) return;
-    addPlace(draft);
-    setAdding(false);
-    setDraft("");
-    onClose();
   }
 
   const onCurrent = selected === "current";
@@ -102,13 +92,13 @@ export function PlacesSheet({
           </div>
         )}
         <div className="flex flex-col gap-2">
-          {places.map((p, i) => {
-            const on = selected === i;
+          {places.map((p) => {
+            const on = selected === p.id;
             return (
               <button
-                key={p.label + i}
+                key={p.id}
                 onClick={() => {
-                  select(i);
+                  select(p.id);
                   close();
                 }}
                 className={`flex w-full items-center gap-3.5 rounded-[18px] px-4 py-3.5 text-left transition-colors ${
@@ -144,39 +134,10 @@ export function PlacesSheet({
       <div className="px-5 pt-3 pb-7">
         {adding ? (
           <div className="rounded-[20px] bg-white p-4 shadow-lift">
-            <label
-              htmlFor="newPlace"
-              className="mb-2 block text-[10px] font-bold tracking-[0.09em] text-faint uppercase"
-            >
+            <div className="mb-3 text-[10px] font-bold tracking-[0.09em] text-faint uppercase">
               New address
-            </label>
-            <input
-              id="newPlace"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && save()}
-              placeholder="Street, area, landmark"
-              autoFocus
-              className="w-full rounded-xl bg-field px-3.5 py-3 text-[16px] text-ink outline-none transition-shadow focus:ring-2 focus:ring-ink/15 placeholder:text-unfilled"
-            />
-            <div className="mt-3 flex gap-2">
-              <button
-                onClick={() => {
-                  setAdding(false);
-                  setDraft("");
-                }}
-                className="flex-1 rounded-full bg-line py-3 text-sm font-semibold text-ink transition-colors hover:bg-unfilled"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={save}
-                disabled={!draft.trim()}
-                className="flex-1 rounded-full bg-red py-3 text-sm font-bold text-white transition-colors hover:bg-red-dark disabled:opacity-40"
-              >
-                Save address
-              </button>
             </div>
+            <AddressForm onDone={() => setAdding(false)} />
           </div>
         ) : (
           <button

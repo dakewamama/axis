@@ -3,6 +3,7 @@ import { Manrope, Inter } from "next/font/google";
 import { OnboardingProvider } from "@/components/OnboardingProvider";
 import { WalletProvider } from "@/components/WalletProvider";
 import { LocationProvider } from "@/components/LocationProvider";
+import { VaultProvider } from "@/components/VaultProvider";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -66,7 +67,9 @@ export default function RootLayout({
         </a>
         <OnboardingProvider>
           <WalletProvider>
-            <LocationProvider>{children}</LocationProvider>
+            <VaultProvider>
+              <LocationProvider>{children}</LocationProvider>
+            </VaultProvider>
           </WalletProvider>
         </OnboardingProvider>
       </body>

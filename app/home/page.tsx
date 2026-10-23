@@ -6,9 +6,11 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { AxisGlyph } from "@/components/AxisMark";
 import { AddMoneySheet } from "@/components/AddMoneySheet";
 import { PlacesSheet } from "@/components/PlacesSheet";
+import { SettingsSheet } from "@/components/SettingsSheet";
 import { useOnboarding } from "@/components/OnboardingProvider";
 import { useWallet } from "@/components/WalletProvider";
 import { useLocation } from "@/components/LocationProvider";
+import { useVault } from "@/components/VaultProvider";
 import { NGN, relativeDay } from "@/lib/format";
 
 const EXAMPLES = [
@@ -23,9 +25,11 @@ export default function HomePage() {
   const { name, reset } = useOnboarding();
   const { activeLabel } = useLocation();
   const { balance, usdc, live, entries, axisAddress } = useWallet();
+  const { vault, loaded } = useVault();
   const [draft, setDraft] = useState("");
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [placesOpen, setPlacesOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const firstName = name.trim();
 
@@ -37,12 +41,13 @@ export default function HomePage() {
     <PhoneFrame>
       <main className="flex flex-1 animate-rise flex-col overflow-hidden">
         <div className="flex shrink-0 items-center gap-2 px-5 pt-4 pb-2">
-          <span
-            aria-hidden="true"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-ink"
+          <button
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-ink transition-colors hover:bg-red focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             <AxisGlyph size={18} />
-          </span>
+          </button>
           <button
             onClick={() => setPlacesOpen(true)}
             className="flex min-w-0 items-center gap-1.5 rounded-full px-2 py-1.5 transition-colors hover:bg-white focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
@@ -131,6 +136,23 @@ export default function HomePage() {
             ))}
           </div>
 
+          <button
+            onClick={() => router.push("/vault")}
+            className="mt-7 flex w-full items-center gap-3 rounded-[20px] bg-white px-4 py-3.5 text-left shadow-card transition-colors hover:bg-red-tint focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
+          >
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14.5px] font-bold text-ink">Saved details</span>
+              <span className="mt-0.5 block truncate text-[12px] text-faint">
+                {loaded
+                  ? `${vault.beneficiaries.length} people · ${vault.addresses.length} addresses · ${vault.phones.length} phone lines`
+                  : "People you pay, addresses, phone lines"}
+              </span>
+            </span>
+            <span aria-hidden="true" className="text-faint">
+              &rarr;
+            </span>
+          </button>
+
           <div className="mt-9 mb-1 flex items-baseline justify-between">
             <span className="text-[10px] font-bold tracking-[0.1em] text-faint uppercase">
               Activity
@@ -178,6 +200,11 @@ export default function HomePage() {
         </div>
 
         <PlacesSheet open={placesOpen} onClose={() => setPlacesOpen(false)} />
+        <SettingsSheet
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          onAddMoney={() => setTopUpOpen(true)}
+        />
         <AddMoneySheet
           open={topUpOpen}
           onClose={() => setTopUpOpen(false)}

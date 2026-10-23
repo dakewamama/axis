@@ -6,6 +6,7 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { StepBadge } from "@/components/StepBadge";
 import { useOnboarding } from "@/components/OnboardingProvider";
 import { SKIP_ONBOARDING } from "@/lib/flags";
+import { takeReturnTo } from "@/lib/returnTo";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function AuthPage() {
       return;
     }
     if (hydrated && authMethod) {
-      router.replace(name.trim() ? "/home" : "/name");
+      router.replace(name.trim() ? takeReturnTo("/home") : "/name");
     }
   }, [router, hydrated, authMethod, name]);
 
@@ -54,7 +55,7 @@ export default function AuthPage() {
       setAuthMethod("email");
       // Login restores the saved profile name; signup returns "" (set on /name).
       if (data.name) setName(data.name);
-      router.push(mode === "signup" ? "/name" : "/home");
+      router.push(mode === "signup" ? "/name" : takeReturnTo("/home"));
     } catch {
       setError("Couldn't reach Axis. Try again in a moment.");
       setBusy(false);

@@ -1,8 +1,12 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { useVault } from "@/components/VaultProvider";
+import { addressLine } from "@/lib/vault";
 
+/** A saved address from the user's vault, as the location picker shows it. */
 export type Place = {
+  id: string;
   label: string;
   detail: string;
   tag?: string;
@@ -11,16 +15,17 @@ export type Place = {
 /** accuracy: the device's confidence radius in metres. */
 export type Coords = { lat: number; lng: number; accuracy?: number };
 
-const KEY = "axis:location:v1";
+// Only the device-local choice and GPS fix live here; addresses live in the vault.
+const KEY = "axis:location:v2";
 /** Stop early once the fix is this precise (metres). */
 const GOOD_ENOUGH_M = 20;
 /** Longest we wait for GPS to settle. */
 const LOCATE_MS = 15000;
 
-type Selection = number | "current";
+/** "current" or a saved address id. */
+type Selection = string;
 
 type Persisted = {
-  places: Place[];
   selected: Selection;
   current: Coords | null;
 };
@@ -31,7 +36,6 @@ type LocationState = {
   selected: Selection;
   current: Coords | null;
   select: (value: Selection) => void;
-  addPlace: (label: string) => void;
   /** Ask the browser for the real device location. Resolves to an error string
    *  on failure (permission denied / unavailable), or null on success. */
   locateCurrent: () => Promise<string | null>;
@@ -44,8 +48,14 @@ const LocationContext = createContext<LocationState | null>(null);
 
 export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
-  // No fabricated addresses. Saved places start empty; the user adds their own.
-  const [places, setPlaces] = useState<Place[]>([]);
+  const { vault } = useVault();
+  // No fabricated addresses: saved places are exactly the user's vault addresses.
+  const places: Place[] = vault.addresses.map((a) => ({
+    id: a.id,
+    label: a.label,
+    detail: addressLine(a),
+    ...(a.isDefault ? { tag: "Default" } : {}),
+  }));
   const [selected, setSelected] = useState<Selection>("current");
   const [current, setCurrent] = useState<Coords | null>(null);
 
@@ -54,12 +64,9 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const p = JSON.parse(raw) as Partial<Persisted>;
-        // Restoring saved places from localStorage after mount (not available during SSR).
+        // Restoring the device's choice from localStorage after mount (not available during SSR).
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        if (Array.isArray(p.places)) setPlaces(p.places);
-        if (p.selected === "current" || typeof p.selected === "number") {
-          setSelected(p.selected);
-        }
+        if (typeof p.selected === "string" && p.selected) setSelected(p.selected);
         if (p.current && typeof p.current.lat === "number") setCurrent(p.current);
       }
     } catch {
@@ -71,22 +78,12 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
     try {
-      const payload: Persisted = { places, selected, current };
+      const payload: Persisted = { selected, current };
       localStorage.setItem(KEY, JSON.stringify(payload));
     } catch {
       // storage full or blocked
     }
-  }, [hydrated, places, selected, current]);
-
-  function addPlace(label: string) {
-    const trimmed = label.trim();
-    if (!trimmed) return;
-    setPlaces((prev) => {
-      const next = [...prev, { label: trimmed, detail: "Saved address" }];
-      setSelected(next.length - 1);
-      return next;
-    });
-  }
+  }, [hydrated, selected, current]);
 
   function locateCurrent(): Promise<string | null> {
     return new Promise((resolve) => {
@@ -133,27 +130,28 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   function reset() {
     try {
       localStorage.removeItem(KEY);
+      localStorage.removeItem("axis:location:v1");
     } catch {
       // ignore
     }
-    setPlaces([]);
     setSelected("current");
     setCurrent(null);
   }
 
-  const active = selected === "current" ? null : places[selected];
+  // A deleted address falls back to the current location.
+  const active = selected === "current" ? null : (places.find((p) => p.id === selected) ?? null);
   const activeLabel =
-    selected === "current"
+    !active
       ? current
         ? "Current location"
         : "Set location"
-      : (active?.label ?? "Set location");
+      : active.label;
   const activeDetail =
-    selected === "current"
+    !active
       ? current
         ? `${current.lat.toFixed(5)}, ${current.lng.toFixed(5)}${current.accuracy !== undefined ? ` · ±${Math.round(current.accuracy)} m` : ""}`
         : "Tap to set your delivery location"
-      : (active?.detail ?? "");
+      : active.detail;
 
   return (
     <LocationContext.Provider
@@ -163,7 +161,6 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         selected,
         current,
         select: setSelected,
-        addPlace,
         locateCurrent,
         activeLabel,
         activeDetail,

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useOnboarding } from "./OnboardingProvider";
 import { SKIP_ONBOARDING } from "@/lib/flags";
+import { rememberReturnTo } from "@/lib/returnTo";
 
 type Requirement = "authed" | "named" | "complete";
 
@@ -34,6 +35,7 @@ export function useGuard(
     // "complete" also allows in once authed + named (channels is optional).
 
     if (target) {
+      rememberReturnTo(window.location.pathname);
       if (opts?.preserveQuery) {
         const qs = search.toString();
         if (qs) target += `?${qs}`;
