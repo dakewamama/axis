@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useVault } from "@/components/VaultProvider";
 import { useLocation } from "@/components/LocationProvider";
 import type { Address, Beneficiary, Phone, Section } from "@/lib/vault";
@@ -87,12 +87,27 @@ function Footer({
   );
 }
 
+/** Banks Axis can pay, fetched once per page load for the bank field. */
+let bankList: Promise<string[]> | null = null;
+function useBanks(): string[] {
+  const [banks, setBanks] = useState<string[]>([]);
+  useEffect(() => {
+    bankList ??= fetch("/api/banks")
+      .then((r) => r.json())
+      .then((d: { banks?: string[] }) => d.banks ?? [])
+      .catch(() => []);
+    void bankList.then(setBanks);
+  }, []);
+  return banks;
+}
+
 export function BeneficiaryForm({ entry, onDone }: { entry?: Beneficiary; onDone: () => void }) {
   const [label, setLabel] = useState(entry?.label ?? "");
   const [bank, setBank] = useState(entry?.bank ?? "");
   const [accountNumber, setAccountNumber] = useState(entry?.accountNumber ?? "");
   const [note, setNote] = useState(entry?.note ?? "");
   const { busy, error, submit, destroy } = useSubmit("beneficiaries", entry?.id, onDone);
+  const banks = useBanks();
   const valid = label.trim() && bank.trim().length >= 2 && /^\d{10}$/.test(accountNumber);
   return (
     <form
@@ -104,7 +119,12 @@ export function BeneficiaryForm({ entry, onDone }: { entry?: Beneficiary; onDone
       <label className={labelCls} htmlFor="b-label">Who is this?</label>
       <input id="b-label" value={label} onChange={(e) => setLabel(e.target.value.slice(0, 60))} placeholder="e.g. Landlord, Mum, Tailor" className={`${field} mb-3`} />
       <label className={labelCls} htmlFor="b-bank">Bank</label>
-      <input id="b-bank" value={bank} onChange={(e) => setBank(e.target.value.slice(0, 80))} placeholder="e.g. GTBank, Access Bank, Zenith" className={`${field} mb-3`} />
+      <input id="b-bank" list="b-banks" autoComplete="off" value={bank} onChange={(e) => setBank(e.target.value.slice(0, 80))} placeholder="e.g. GTBank, OPay, Moniepoint" className={`${field} mb-3`} />
+      <datalist id="b-banks">
+        {banks.map((b) => (
+          <option key={b} value={b} />
+        ))}
+      </datalist>
       <label className={labelCls} htmlFor="b-acct">Account number</label>
       <input
         id="b-acct"
