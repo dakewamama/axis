@@ -4,14 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { useGuard } from "@/components/useGuard";
+import { lagosTime } from "@/lib/format";
 import { StatusChip } from "@/components/ActivityList";
 import {
-  type ActivityItem,
-  type TimelineEntry,
+  type ActivityDetail,
+  type SupportReport,
   amountOf,
   explorer,
   loadActivityItem,
   naira,
+  reportProblem,
   sol,
   usdc,
 } from "@/lib/activity";
@@ -19,15 +21,14 @@ import {
 /** A Solana transaction signature (base58, 64 bytes), which Solscan can show. */
 const isSignature = (s: string) => /^[1-9A-HJ-NP-Za-km-z]{64,90}$/.test(s);
 
-const time = (at: string) =>
-  new Date(at).toLocaleString("en-NG", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+const time = (at: string) => lagosTime(at);
 
 /** One payment, request or deposit: what it is, where it stands, and what happened, with proof. */
 export default function ActivityDetailPage() {
   const router = useRouter();
   const ready = useGuard("complete");
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<{ item: ActivityItem; timeline: TimelineEntry[] } | null>(null);
+  const [data, setData] = useState<ActivityDetail | null>(null);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -60,6 +61,7 @@ export default function ActivityDetailPage() {
         ...(item.asset && item.direction === "out" ? ([["Paid with", item.asset]] as [string, string][]) : []),
         ...(item.lamports ? ([["Received", sol(item.lamports)]] as [string, string][]) : []),
         ["Date", time(item.at)],
+        ...(item.expectBy ? ([["Expected by", time(item.expectBy)]] as [string, string][]) : []),
       ]
     : [];
 
@@ -136,10 +138,118 @@ export default function ActivityDetailPage() {
                   </ol>
                 </>
               )}
+              <Reports
+                reports={data.reports}
+                reasons={data.reasons}
+                onReport={async (reason, details) => {
+                  const reports = await reportProblem(item.id, reason, details);
+                  setData({ ...data, reports });
+                }}
+              />
             </>
           )}
         </div>
       </main>
     </PhoneFrame>
+  );
+}
+
+const REPORT_STATUS: Record<SupportReport["status"], { label: string; tone: string }> = {
+  open: { label: "Reported", tone: "bg-red-tint text-red-deep" },
+  investigating: { label: "Support is on it", tone: "bg-amber/20 text-ink" },
+  resolved: { label: "Resolved", tone: "bg-ink text-white" },
+};
+
+/** Problems reported on this item, and a way to report one. Support replies in chat and here. */
+function Reports({
+  reports,
+  reasons,
+  onReport,
+}: {
+  reports: SupportReport[];
+  reasons: Record<string, string>;
+  onReport: (reason: string, details: string) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [details, setDetails] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  if (!Object.keys(reasons).length) return null;
+  return (
+    <div className="mt-6">
+      {reports.map((r) => (
+        <div key={r.id} className="mb-2 rounded-[16px] bg-white p-3.5 shadow-card">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[13px] font-semibold text-ink">{r.reasonText}</span>
+            <span className={`shrink-0 rounded-full px-2 py-[3px] text-[10px] font-extrabold tracking-[0.04em] uppercase ${REPORT_STATUS[r.status].tone}`}>
+              {REPORT_STATUS[r.status].label}
+            </span>
+          </div>
+          {r.details && <p className="mt-1 text-[12.5px] whitespace-pre-line text-muted">{r.details}</p>}
+          {r.resolution && <p className="mt-1.5 text-[12.5px] text-ink">Axis support: {r.resolution}</p>}
+        </div>
+      ))}
+      {open ? (
+        <form
+          className="rounded-[18px] bg-white p-4 shadow-lift"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!reason) return setError("Choose what went wrong.");
+            setBusy(true);
+            setError("");
+            try {
+              await onReport(reason, details);
+              setOpen(false);
+              setReason("");
+              setDetails("");
+            } catch (err) {
+              setError((err as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <div className="mb-2 text-[12px] font-semibold text-ink">What went wrong?</div>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {Object.entries(reasons).map(([id, text]) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={reason === id}
+                onClick={() => setReason(id)}
+                className={`rounded-full px-3 py-2 text-left text-[12px] font-bold transition-colors ${reason === id ? "bg-ink text-white" : "bg-line text-ink hover:bg-red-tint"}`}
+              >
+                {text}
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={details}
+            onChange={(e) => setDetails(e.target.value.slice(0, 1000))}
+            rows={3}
+            placeholder="Anything that helps, e.g. the session ID from the recipient's bank"
+            className="mb-2 w-full resize-none rounded-2xl bg-field px-4 py-3 text-[16px] text-ink outline-none placeholder:text-unfilled focus:ring-2 focus:ring-ink/15"
+          />
+          {error && <p className="mb-2 text-[12.5px] text-red-deep" role="alert">{error}</p>}
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setOpen(false)} className="flex-1 rounded-full bg-line py-3 text-sm font-semibold text-ink hover:bg-unfilled">
+              Cancel
+            </button>
+            <button type="submit" disabled={busy} className="flex-1 rounded-full bg-red py-3 text-sm font-bold text-white hover:bg-red-dark disabled:opacity-40">
+              {busy ? "Sending…" : "Send report"}
+            </button>
+          </div>
+          <p className="mt-2 text-[11.5px] text-faint">Axis support checks it with the provider and replies in your chat.</p>
+        </form>
+      ) : (
+        <button
+          onClick={() => setOpen(true)}
+          className="w-full rounded-full py-3 text-[13px] font-semibold text-muted transition-colors hover:bg-white hover:text-ink"
+        >
+          Report a problem
+        </button>
+      )}
+    </div>
   );
 }

@@ -33,6 +33,26 @@ export type ActivityItem = {
   signature?: string;
   /** Name of the recurring task that created it. */
   recurring?: string;
+  /** For items being checked: when Axis expects to know the outcome. */
+  expectBy?: string;
+};
+
+export type SupportReport = {
+  id: string;
+  reason: string;
+  reasonText: string;
+  details: string;
+  status: "open" | "investigating" | "resolved";
+  resolution: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ActivityDetail = {
+  item: ActivityItem;
+  timeline: TimelineEntry[];
+  reports: SupportReport[];
+  reasons: Record<string, string>;
 };
 
 export type TimelineEntry = { at: string; text: string; proof?: string };
@@ -88,9 +108,20 @@ export async function loadActivity(): Promise<ActivityItem[]> {
   return data.items ?? [];
 }
 
-export async function loadActivityItem(id: string): Promise<{ item: ActivityItem; timeline: TimelineEntry[] }> {
+export async function loadActivityItem(id: string): Promise<ActivityDetail> {
   const res = await fetch(`/api/activity/${encodeURIComponent(id)}`, { cache: "no-store" });
-  const data = (await res.json().catch(() => ({}))) as { item?: ActivityItem; timeline?: TimelineEntry[]; error?: string };
+  const data = (await res.json().catch(() => ({}))) as Partial<ActivityDetail> & { error?: string };
   if (!res.ok || !data.item) throw new Error(res.status === 404 ? "This isn't in your activity." : data.error || "Couldn't load this.");
-  return { item: data.item, timeline: data.timeline ?? [] };
+  return { item: data.item, timeline: data.timeline ?? [], reports: data.reports ?? [], reasons: data.reasons ?? {} };
+}
+
+export async function reportProblem(id: string, reason: string, details: string): Promise<SupportReport[]> {
+  const res = await fetch(`/api/activity/${encodeURIComponent(id)}/report`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ reason, ...(details.trim() ? { details: details.trim() } : {}) }),
+  });
+  const data = (await res.json().catch(() => ({}))) as { reports?: SupportReport[]; error?: string };
+  if (!res.ok) throw new Error(data.error || "Couldn't send your report. Try again.");
+  return data.reports ?? [];
 }

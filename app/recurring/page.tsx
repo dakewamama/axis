@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { useGuard } from "@/components/useGuard";
+import { lagosTime } from "@/lib/format";
 import { useVault } from "@/components/VaultProvider";
 import { field } from "@/components/VaultForms";
 import { toMinor } from "@/lib/settings";
@@ -24,8 +25,7 @@ const labelCls = "mb-1.5 block text-[12px] font-semibold text-ink";
 const card = "rounded-[20px] bg-white p-4 shadow-card";
 const chip = (on: boolean) =>
   `rounded-full px-3.5 py-2 text-[12.5px] font-bold transition-colors disabled:opacity-40 ${on ? "bg-ink text-white" : "bg-line text-ink hover:bg-red-tint"}`;
-const when = (iso: string) =>
-  new Date(iso).toLocaleString("en-NG", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+const when = (iso: string) => lagosTime(iso, true);
 const OUTCOME: Record<string, string> = {
   awaiting_approval: "Last run is waiting for your approval",
   auto_approved: "Last run was paid automatically",

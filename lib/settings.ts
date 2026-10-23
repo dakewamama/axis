@@ -9,7 +9,7 @@ export type Limits = {
   tierMonthlyMinor: string;
 };
 export type Connection = { id: string; name: string; expiresAt: string };
-export type Settings = { services: ServiceSetting[]; limits: Limits; connections: Connection[]; mcpUrl: string | null };
+export type Settings = { services: ServiceSetting[]; limits: Limits; connections: Connection[]; mcpUrl: string | null; spendingPaused: boolean };
 
 async function call(path: string, body?: unknown): Promise<Settings> {
   const res = await fetch(path, body === undefined ? {} : {
@@ -26,7 +26,7 @@ async function call(path: string, body?: unknown): Promise<Settings> {
 const MICRO = BigInt(1_000_000);
 
 export const loadSettings = () => call("/api/settings");
-export const saveSettings = (patch: { disabledServices?: string[]; perPaymentMinor?: string | null; monthlyMinor?: string | null }) =>
+export const saveSettings = (patch: { disabledServices?: string[]; perPaymentMinor?: string | null; monthlyMinor?: string | null; spendingPaused?: boolean }) =>
   call("/api/settings", patch);
 export const disconnect = (id: string) => call("/api/connections/revoke", { id });
 

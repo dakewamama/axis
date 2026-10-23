@@ -66,6 +66,29 @@ export function Configuration() {
 
   return (
     <>
+      <div className={`${card} ${settings.spendingPaused ? "ring-2 ring-red" : ""}`}>
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="text-[15px] font-bold text-ink">{settings.spendingPaused ? "All spending is paused" : "Pause all spending"}</div>
+            <p className="mt-0.5 text-[12.5px] leading-[1.45] text-faint">
+              {settings.spendingPaused
+                ? "Nothing can be paid from your wallet: not here, not from ChatGPT or Claude, not auto-pay. Turn it back on any time."
+                : "One switch that stops every payment from your wallet, from any app and from auto-pay, until you turn it back on."}
+            </p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={settings.spendingPaused}
+            aria-label="Pause all spending"
+            disabled={busy}
+            onClick={() => run(() => saveSettings({ spendingPaused: !settings.spendingPaused }))}
+            className={`relative mt-1 h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-40 ${settings.spendingPaused ? "bg-red" : "bg-unfilled"}`}
+          >
+            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${settings.spendingPaused ? "left-6" : "left-1"}`} />
+          </button>
+        </div>
+      </div>
+
       <div className={card}>
         <div className={heading}>Services</div>
         <div className="flex flex-col gap-2.5">
