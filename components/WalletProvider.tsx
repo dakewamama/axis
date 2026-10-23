@@ -10,17 +10,6 @@ import {
 } from "react";
 import { useOnboarding } from "@/components/OnboardingProvider";
 
-export type Entry = {
-  id: string;
-  label: string;
-  /** Naira for demo activity; USDC decimal string for confirmed deposits. */
-  display: string;
-  positive: boolean;
-  /** True only for entries the backend confirmed on-chain. */
-  confirmed: boolean;
-  at: number;
-};
-
 /**
  * "provisioning" — waiting on the first wallet response.
  * "ready"        — address known.
@@ -37,7 +26,6 @@ type WalletState = {
   /** True once the user's wallet address is known. */
   live: boolean;
   status: WalletStatus;
-  entries: Entry[];
   refresh: () => void;
   /** The user's deposit address (USDC on Solana). */
   axisAddress: string;
@@ -123,8 +111,6 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   }, [authed, refresh]);
 
   const live = Boolean(address);
-  // No on-chain deposit history endpoint yet; the balance is the source of truth.
-  const entries: Entry[] = [];
 
   return (
     <WalletContext.Provider
@@ -133,7 +119,6 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         usdc,
         live,
         status,
-        entries,
         refresh: () => void refresh(),
         axisAddress: address,
       }}

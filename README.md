@@ -17,6 +17,7 @@ service URLs and tokens server-side and forward to:
 | `/api/location`, `/api/place` | brain `/web/location`, `/web/place` | precise device location; the place you're at (from GPS or a tag) |
 | `/api/settings`, `/api/connections/revoke` | brain `/web/settings`, `/web/connections/revoke` | the user's configuration (`/services`): services on/off, personal spending limits, connected AI apps |
 | `/api/vault`, `/api/vault/<section>[/<id>[/delete]]` | brain `/web/vault/*` | saved people you pay, addresses and phone lines (`/vault`) |
+| `/api/activity`, `/api/activity/<id>` | brain `/web/activity*` + onboarding `/wallet/activity` | transaction history (`/activity`): payments and requests from any app, deposits and debits, with status and a timeline |
 | `/api/banks` | brain `/web/banks` | banks Axis can pay, for suggestions |
 | `/api/payments/<id>` | brain `/web/payments/:id` | a payment waiting for approval (`/approve/<id>`, linked from connected AI apps) |
 | `/t/<code>` | none | QR/NFC seat tag link; opens chat on that place and seat |

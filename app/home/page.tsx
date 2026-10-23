@@ -11,7 +11,8 @@ import { useOnboarding } from "@/components/OnboardingProvider";
 import { useWallet } from "@/components/WalletProvider";
 import { useLocation } from "@/components/LocationProvider";
 import { useVault } from "@/components/VaultProvider";
-import { NGN, relativeDay } from "@/lib/format";
+import { NGN } from "@/lib/format";
+import { ActivityRow, useActivity } from "@/components/ActivityList";
 
 const EXAMPLES = [
   "does nadia have chicken wings",
@@ -24,7 +25,8 @@ export default function HomePage() {
   const router = useRouter();
   const { name, reset } = useOnboarding();
   const { activeLabel } = useLocation();
-  const { balance, usdc, live, entries, axisAddress } = useWallet();
+  const { balance, usdc, live, axisAddress } = useWallet();
+  const { items: activity } = useActivity();
   const { vault, loaded } = useVault();
   const [draft, setDraft] = useState("");
   const [topUpOpen, setTopUpOpen] = useState(false);
@@ -157,36 +159,21 @@ export default function HomePage() {
             <span className="text-[10px] font-bold tracking-[0.1em] text-faint uppercase">
               Activity
             </span>
-            <span className="text-[11px] text-faint">
-              {entries.length}{" "}
-              {entries.length === 1 ? "entry" : "entries"}
-            </span>
+            <button
+              onClick={() => router.push("/activity")}
+              className="text-[12px] font-semibold text-muted transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
+            >
+              See all
+            </button>
           </div>
-          <div>
-            {entries.slice(0, 8).map((t) => (
-              <div
-                key={t.id}
-                className="flex items-baseline justify-between gap-3 border-b border-line py-3.5 last:border-0"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14px] font-semibold text-ink">
-                    {t.label}
-                  </span>
-                  <span className="mt-0.5 block text-[11px] text-faint">
-                    {relativeDay(t.at)}
-                  </span>
-                 </span>
-                <span
-                  className={`text-[14px] font-bold whitespace-nowrap ${
-                    t.positive ? "text-red-deep" : "text-ink"
-                  }`}
-                >
-                  {t.positive ? "+" : "−"}
-                  {t.display}
-                </span>
-              </div>
+          {activity && activity.length === 0 && (
+            <p className="py-3 text-[13px] text-faint">Nothing yet. Payments, top-ups and deposits show here.</p>
+          )}
+          <ul>
+            {(activity ?? []).slice(0, 6).map((i) => (
+              <ActivityRow key={i.id} item={i} />
             ))}
-          </div>
+          </ul>
 
           <button
             onClick={() => {
