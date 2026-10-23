@@ -31,6 +31,8 @@ export type ActivityItem = {
   approvalId?: string;
   /** Solana transaction signature, for deposits. */
   signature?: string;
+  /** Name of the recurring task that created it. */
+  recurring?: string;
 };
 
 export type TimelineEntry = { at: string; text: string; proof?: string };

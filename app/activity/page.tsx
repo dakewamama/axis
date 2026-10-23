@@ -35,7 +35,15 @@ export default function ActivityPage() {
           >
             <span aria-hidden="true">&larr;</span> Home
           </button>
-          <h2 className="font-display text-[32px] leading-[1.02] font-extrabold tracking-[-0.02em] text-ink">Activity</h2>
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="font-display text-[32px] leading-[1.02] font-extrabold tracking-[-0.02em] text-ink">Activity</h2>
+            <button
+              onClick={() => router.push("/recurring")}
+              className="shrink-0 text-[12.5px] font-semibold text-muted transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none"
+            >
+              Recurring →
+            </button>
+          </div>
           <p className="mt-2 text-[13px] leading-[1.5] text-faint">
             Everything Axis did with your money, here or from ChatGPT and Claude. &ldquo;Checking&rdquo; means Axis is confirming the
             outcome and will not pay twice.

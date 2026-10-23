@@ -51,6 +51,7 @@ export default function ActivityDetailPage() {
   const rows: [string, string][] = item
     ? [
         ...(item.subtitle ? ([["Details", item.subtitle]] as [string, string][]) : []),
+        ...(item.recurring ? ([["Recurring", item.recurring]] as [string, string][]) : []),
         ...(item.amountKobo ? ([["Amount", naira(item.amountKobo)]] as [string, string][]) : []),
         ...(item.usdcMinor
           ? ([[item.direction === "in" ? "Credited" : "Taken from your wallet", usdc(item.usdcMinor)]] as [string, string][])
