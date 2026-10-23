@@ -1,55 +1,111 @@
-# Axis web app
+# Axis
 
-Next.js front end for Axis: sign-in, wallet balance and deposit address, crypto
-funding, and a chat surface. Deployed on Vercel.
+**Conversational commerce and wallet-backed services through one interface.**
 
-## How it connects
+Axis is a Next.js product surface for an assistant that can understand user intent, preserve context, expose wallet state, and coordinate service workflows through chat.
 
-The browser only talks to this app's own `/api/*` routes. Those routes hold the
-service URLs and tokens server-side and forward to:
+**Live app:** https://axis-two-xi.vercel.app
 
-| Route | Upstream | Purpose |
-|---|---|---|
-| `/api/auth`, `/api/auth/name` | brain `/web/signup`, `/web/login`, `/web/name` | email/password account, display name |
-| `/api/auth/me`, `/api/auth/logout` | brain `/web/me`, `/web/logout` | restore the session, sign out (revokes the brain session) |
-| `/api/wallet` | onboarding `/wallet`, `/wallet/balance` | provision the custodial wallet, read the spendable balance |
-| `/api/chat` | brain `/web/chat` | the Axis assistant |
-| `/api/location`, `/api/place` | brain `/web/location`, `/web/place` | precise device location; the place you're at (from GPS or a tag) |
-| `/api/settings`, `/api/connections/revoke` | brain `/web/settings`, `/web/connections/revoke` | the user's configuration (`/services`): services on/off, personal spending limits, connected AI apps |
-| `/t/<code>` | none | QR/NFC seat tag link; opens chat on that place and seat |
+This repository contains the public web application and its server-side gateway layer. The browser never talks directly to privileged upstream services.
 
-`lib/funding.ts` calls the onboarding funding API (`NEXT_PUBLIC_FUNDING_API`)
-directly from the browser for deposit addresses and deposit history.
+## What the product demonstrates
 
-## Sessions and security
+- **Conversational interface** for service and commerce workflows
+- **Authenticated user sessions** with server-side session validation
+- **Wallet provisioning and balance views**
+- **Crypto funding flows** for deposit addresses and funding history
+- **Location and place context** for location-aware actions
+- **Service controls and spending limits** exposed as user configuration
+- **Explicit approval UI** for payment-sensitive actions
 
-Every call to brain carries `AXIS_WEB_TOKEN`, which must match brain's. Sign-in
-returns a 30-day brain session token for that user; it is stored only inside an
-httpOnly cookie signed with HMAC-SHA256 (`AXIS_SESSION_SECRET`) and never returned
-to the browser. brain authenticates every chat and name request with that token,
-so the assistant can only do what the user's account may do (no spending).
-Wallet, chat and name routes act only for the user in a valid signed session;
-any `userId` in a request body or query is ignored. A missing or invalid cookie
-gets `401`. Without `AXIS_SESSION_SECRET`, sign-in is refused (`503`).
+## Architecture
 
-`npm run build` first runs `scripts/check-forbidden.mjs`, which fails the build
-if client code reintroduces a `NEXT_PUBLIC_` variable named like a secret or
-address, or a banned compliance claim.
+```text
+Browser
+  |
+  v
+Next.js UI
+  |
+  v
+Server-side /api routes
+  |
+  +--> authentication + session service
+  +--> wallet + funding service
+  +--> assistant runtime
+  +--> location + place service
+  +--> user settings + connections
+```
 
-## Known limitations
+The web client talks only to this application's `/api/*` routes. Service URLs, privileged tokens, and session verification stay on the server side.
 
-- Chat shows payment Approve/Decline cards; other replies are plain text.
-- Sessions issued before this change carry no brain token, so those users are
-  asked to sign in again.
-- Activity history is empty: there is no deposit-history feed wired into the
-  wallet view yet.
+### Main routes
 
-## Run
+| Route | Responsibility |
+| --- | --- |
+| `/api/auth`, `/api/auth/name` | Account creation, login, and profile name |
+| `/api/auth/me`, `/api/auth/logout` | Session restoration and logout |
+| `/api/wallet` | Wallet provisioning and spendable balance |
+| `/api/chat` | Assistant conversation |
+| `/api/location`, `/api/place` | Device location and place context |
+| `/api/settings` | Services, spending limits, and connected applications |
+| `/api/connections/revoke` | Revoke a connected service |
+| `/t/<code>` | QR/NFC place or seat context |
+
+## Security model
+
+Axis keeps the browser deliberately thin.
+
+- Session tokens are stored in signed, `httpOnly` cookies.
+- Privileged service tokens are never returned to client-side code.
+- Wallet and chat routes operate only on the authenticated user from the verified session.
+- Client-supplied user IDs are ignored for privileged requests.
+- The build fails if client code reintroduces environment variables that look like secrets or protected addresses.
+- Payment-sensitive flows require an explicit approval step in the UI.
+
+## Current status
+
+### Working
+
+- Sign up, sign in, session restoration, and logout
+- Wallet provisioning and balance retrieval
+- Deposit address and funding flow
+- Assistant chat surface
+- Device location and place context
+- Service configuration and connection revocation
+- Payment Approve / Decline cards
+
+### Still in progress
+
+- A complete activity/deposit history feed in the wallet view
+- Rich structured rendering for assistant responses beyond payment approval cards
+- Broader provider coverage across real-world service workflows
+
+## Local development
 
 ```bash
-cp .env.local.example .env.local   # fill in values; never commit them
+cp .env.local.example .env.local
 npm ci
 npm run dev
 ```
 
-Validate with `npm run lint`, `npx tsc --noEmit` and `npm run build`.
+Then open http://localhost:3000.
+
+Before shipping changes:
+
+```bash
+npm run lint
+npx tsc --noEmit
+npm run build
+```
+
+## Stack
+
+- Next.js
+- TypeScript
+- React
+- Server-side API routes
+- Vercel deployment
+
+## Repository scope
+
+This repository is the Axis web product and gateway layer. Some upstream runtime and service components are maintained separately, so this repo is best read as the product boundary: what the user sees, what the browser is allowed to know, and how requests cross into privileged services safely.
