@@ -1,7 +1,12 @@
 # Axis web app
 
-Next.js front end for Axis: sign-in, wallet balance and deposit address, crypto
-funding, and the user's account layer: saved details, payments approved with a PIN, recurring payments, permissions and history. Conversation happens in AI apps connected to Axis (ChatGPT, Claude). Deployed on Vercel.
+Next.js front end for Axis: the user's account. Sign-in, the wallet (USDC and SOL
+on Solana) with its deposit address, saved people, addresses and phone lines,
+payments approved with a transaction PIN, recurring payments, permissions for
+connected AI apps, and full history with receipts. There is no chat here:
+conversation happens in the AI apps connected to Axis (ChatGPT, Claude), and
+anything that moves money comes back to this app for the user's approval.
+Deployed on Vercel.
 
 ## How it connects
 
@@ -16,12 +21,13 @@ service URLs and tokens server-side and forward to:
 | `/api/location`, `/api/place` | brain `/web/location`, `/web/place` | precise device location; the place you're at (from GPS or a tag) |
 | `/api/settings`, `/api/connections/revoke` | brain `/web/settings`, `/web/connections/revoke` | the user's configuration (`/services`): services on/off, personal spending limits, connected AI apps |
 | `/api/vault`, `/api/vault/<section>[/<id>[/delete]]` | brain `/web/vault/*` | saved people you pay, addresses and phone lines (`/vault`) |
-| `/api/activity`, `/api/activity/<id>` | brain `/web/activity*` + onboarding `/wallet/activity` | transaction history (`/activity`): payments and requests from any app, deposits and debits, with status and a timeline |
+| `/api/activity`, `/api/activity/<id>[/report]` | brain `/web/activity*` + onboarding `/wallet/activity` | transaction history (`/activity`): payments and requests from any app, deposits and debits, with status, a timeline, a shareable receipt for completed payouts, and problem reports |
 | `/api/standing`, `/api/standing/<id>[/confirm]` | brain `/web/standing*` | recurring payments and rate alerts (`/recurring`) |
 | `/api/payments/request`, `/api/payments/<id>/decide` | brain `/web/payments/*` | start a payment to a saved person or place; approve (with PIN) or decline |
 | `/api/pin` | brain `/web/pin` | transaction PIN status, create and change |
 | `/api/banks` | brain `/web/banks` | banks Axis can pay, for suggestions |
-| `/api/payments/<id>` | brain `/web/payments/:id` | a payment waiting for approval (`/approve/<id>`, linked from connected AI apps) |
+| `/api/payments/<id>` | brain `/web/payments/:id` | a payment waiting for approval (`/approve/<id>`, linked from connected AI apps), with whether the user has paid that account before |
+| `/api/notices` | brain `/web/notices` | updates on the Home screen (payment outcomes, recurring runs) |
 | `/t/<code>` | none | QR/NFC seat tag link; opens that place and seat (`/place`) |
 
 ## Sessions and security
@@ -30,7 +36,8 @@ Every call to brain carries `AXIS_WEB_TOKEN`, which must match brain's. Sign-in
 returns a 30-day brain session token for that user; it is stored only inside an
 httpOnly cookie signed with HMAC-SHA256 (`AXIS_SESSION_SECRET`) and never returned
 to the browser. brain authenticates every request with that token,
-so the assistant can only do what the user's account may do (no spending).
+so every call acts only within what that user's account may do. Approving a
+payment, turning auto-pay on and loosening limits also need the transaction PIN.
 Every route acts only for the user in a valid signed session;
 any `userId` in a request body or query is ignored. A missing or invalid cookie
 gets `401`. Without `AXIS_SESSION_SECRET`, sign-in is refused (`503`).
@@ -41,11 +48,11 @@ address, or a banned compliance claim.
 
 ## Known limitations
 
-- Chat shows payment Approve/Decline cards; other replies are plain text.
-- Sessions issued before this change carry no brain token, so those users are
-  asked to sign in again.
-- Activity history is empty: there is no deposit-history feed wired into the
-  wallet view yet.
+- Payments need brain's PAJ credentials. Without them the app says payments
+  aren't switched on and nothing is paid.
+- Times are shown in Lagos time everywhere.
+- `NEXT_PUBLIC_SKIP_ONBOARDING=1` skips the sign-up screens for UI testing only.
+  It creates no session, so every server route still answers 401.
 
 ## Run
 
