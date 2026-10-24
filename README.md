@@ -1,7 +1,7 @@
 # Axis web app
 
 Next.js front end for Axis: sign-in, wallet balance and deposit address, crypto
-funding, and a chat surface. Deployed on Vercel.
+funding, and the user's account layer: saved details, payments approved with a PIN, recurring payments, permissions and history. Conversation happens in AI apps connected to Axis (ChatGPT, Claude). Deployed on Vercel.
 
 ## How it connects
 
@@ -22,16 +22,16 @@ service URLs and tokens server-side and forward to:
 | `/api/pin` | brain `/web/pin` | transaction PIN status, create and change |
 | `/api/banks` | brain `/web/banks` | banks Axis can pay, for suggestions |
 | `/api/payments/<id>` | brain `/web/payments/:id` | a payment waiting for approval (`/approve/<id>`, linked from connected AI apps) |
-| `/t/<code>` | none | QR/NFC seat tag link; opens chat on that place and seat |
+| `/t/<code>` | none | QR/NFC seat tag link; opens that place and seat (`/place`) |
 
 ## Sessions and security
 
 Every call to brain carries `AXIS_WEB_TOKEN`, which must match brain's. Sign-in
 returns a 30-day brain session token for that user; it is stored only inside an
 httpOnly cookie signed with HMAC-SHA256 (`AXIS_SESSION_SECRET`) and never returned
-to the browser. brain authenticates every chat and name request with that token,
+to the browser. brain authenticates every request with that token,
 so the assistant can only do what the user's account may do (no spending).
-Wallet, chat and name routes act only for the user in a valid signed session;
+Every route acts only for the user in a valid signed session;
 any `userId` in a request body or query is ignored. A missing or invalid cookie
 gets `401`. Without `AXIS_SESSION_SECRET`, sign-in is refused (`503`).
 
