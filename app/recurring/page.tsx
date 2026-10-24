@@ -8,14 +8,15 @@ import { lagosTime } from "@/lib/format";
 import { useVault } from "@/components/VaultProvider";
 import { field } from "@/components/VaultForms";
 import { toMinor } from "@/lib/settings";
-import { usdc } from "@/lib/activity";
 import {
   MONTHS,
   type Schedule,
   type StandingOrder,
   WEEKDAYS,
+  type AutoTerms,
   confirmStanding,
   createStanding,
+  autoSummary,
   describeSchedule,
   loadStanding,
   updateStanding,
@@ -138,25 +139,62 @@ function summary(o: StandingOrder, payee?: string): string {
   return `${amount} to ${payee ?? "a saved person"} · ${o.schedule ? describeSchedule(o.schedule) : ""}`;
 }
 
-function AutoPay({ order, busy, onSave, saveLabel = "Save" }: { order: StandingOrder; busy: boolean; onSave: (minor: string | null) => void; saveLabel?: string }) {
-  const [on, setOn] = useState(order.mode === "auto");
-  const [limit, setLimit] = useState(order.autoMaxMinor ? (Number(order.autoMaxMinor) / 1e6).toString() : "");
-  const [err, setErr] = useState("");
+type AutoState = { on: boolean; limit: string; months: 3 | 6 | 12; total: string };
+
+const fromMinor = (m: string | null) => (m ? (Number(m) / 1e6).toString() : "");
+
+function initialAuto(o?: StandingOrder): AutoState {
+  return { on: o?.mode === "auto", limit: fromMinor(o?.autoMaxMinor ?? null), months: 6, total: fromMinor(o?.autoTotalMinor ?? null) };
+}
+
+/** The auto-pay terms to send, or an error message to show. */
+function buildTerms(s: AutoState): AutoTerms {
+  if (!s.on) return { autoMaxMinor: null };
+  const autoMaxMinor = toMinor(s.limit);
+  if (!autoMaxMinor) throw new Error("Enter the most auto-pay may pay each time");
+  const autoTotalMinor = s.total.trim() ? toMinor(s.total) : null;
+  if (autoTotalMinor && BigInt(autoTotalMinor) < BigInt(autoMaxMinor)) throw new Error("The total must be at least the most per payment");
+  const until = new Date();
+  until.setMonth(until.getMonth() + s.months);
+  return { autoMaxMinor, autoUntil: until.toISOString(), autoTotalMinor };
+}
+
+function AutoFields({ state, set, busy, id }: { state: AutoState; set: (s: AutoState) => void; busy: boolean; id: string }) {
   return (
-    <div className="mt-3">
+    <>
       <div className="mb-2 flex flex-wrap gap-1.5">
-        <button type="button" className={chip(!on)} disabled={busy} onClick={() => setOn(false)}>Ask me each time</button>
-        <button type="button" className={chip(on)} disabled={busy} onClick={() => setOn(true)}>Pay automatically</button>
+        <button type="button" className={chip(!state.on)} disabled={busy} onClick={() => set({ ...state, on: false })}>Ask me each time</button>
+        <button type="button" className={chip(state.on)} disabled={busy} onClick={() => set({ ...state, on: true })}>Pay automatically</button>
       </div>
-      {on && (
+      {state.on && (
         <>
-          <label className={labelCls} htmlFor={`lim-${order.id}`}>Most per payment (USDC)</label>
-          <input id={`lim-${order.id}`} inputMode="decimal" value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="e.g. 110" className={`${field} mb-1`} />
+          <label className={labelCls} htmlFor={`${id}-lim`}>Most per payment (USDC)</label>
+          <input id={`${id}-lim`} inputMode="decimal" value={state.limit} onChange={(e) => set({ ...state, limit: e.target.value })} placeholder="e.g. 110" className={`${field} mb-3`} />
+          <div className={labelCls}>Auto-pay for</div>
+          <div className="mb-3 flex gap-1.5">
+            {([3, 6, 12] as const).map((m) => (
+              <button key={m} type="button" className={chip(state.months === m)} onClick={() => set({ ...state, months: m })}>
+                {m === 12 ? "1 year" : `${m} months`}
+              </button>
+            ))}
+          </div>
+          <label className={labelCls} htmlFor={`${id}-total`}>Most in total (USDC, optional)</label>
+          <input id={`${id}-total`} inputMode="decimal" value={state.total} onChange={(e) => set({ ...state, total: e.target.value })} placeholder="No total limit" className={`${field} mb-1`} />
           <p className="mb-2 text-[11.5px] leading-[1.4] text-faint">
-            A run that costs more than this waits for your approval. Your account limits still apply.
+            A payment above these limits, or after auto-pay ends, waits for your approval. Your account limits still apply.
           </p>
         </>
       )}
+    </>
+  );
+}
+
+function AutoPay({ order, busy, onSave, saveLabel = "Save" }: { order: StandingOrder; busy: boolean; onSave: (terms: AutoTerms) => void; saveLabel?: string }) {
+  const [state, set] = useState(() => initialAuto(order));
+  const [err, setErr] = useState("");
+  return (
+    <div className="mt-3">
+      <AutoFields state={state} set={set} busy={busy} id={order.id} />
       {err && <p className="mb-2 text-[12px] text-red-deep">{err}</p>}
       <button
         type="button"
@@ -164,9 +202,7 @@ function AutoPay({ order, busy, onSave, saveLabel = "Save" }: { order: StandingO
         onClick={() => {
           setErr("");
           try {
-            const minor = on ? toMinor(limit) : null;
-            if (on && !minor) throw new Error("Enter a limit for auto-pay");
-            onSave(minor);
+            onSave(buildTerms(state));
           } catch (e) {
             setErr((e as Error).message);
           }
@@ -185,7 +221,7 @@ function Proposed({ order, payee, busy, run }: { order: StandingOrder; payee?: s
       <div className="mb-1 text-[10px] font-bold tracking-[0.09em] text-red-deep uppercase">Suggested in chat · needs you</div>
       <div className="text-[15px] font-bold text-ink">{order.label}</div>
       <div className="mt-0.5 text-[12.5px] text-muted">{summary(order, payee)}</div>
-      <AutoPay order={order} busy={busy} saveLabel="Set it up" onSave={(minor) => void run(() => confirmStanding(order.id, minor))} />
+      <AutoPay order={order} busy={busy} saveLabel="Set it up" onSave={(terms) => void run(() => confirmStanding(order.id, terms))} />
       <button
         disabled={busy}
         onClick={() => void run(() => updateStanding(order.id, { action: "end" }))}
@@ -213,7 +249,7 @@ function Task({ order, payee, busy, run }: { order: StandingOrder; payee?: strin
               : order.kind === "pay" && order.nextRunAt
                 ? `Next: ${when(order.nextRunAt)}${order.runsLeft !== null ? ` · ${order.runsLeft} left` : ""}`
                 : "Watching"}
-            {order.mode === "auto" && order.autoMaxMinor ? ` · auto-pay up to ${usdc(order.autoMaxMinor)}` : ""}
+            {order.mode === "auto" && order.autoMaxMinor ? ` · ${autoSummary(order)}` : ""}
           </span>
           {order.lastRun && OUTCOME[order.lastRun.outcome] && (
             <span className="mt-0.5 block text-[11.5px] text-faint">{OUTCOME[order.lastRun.outcome]}</span>
@@ -224,7 +260,7 @@ function Task({ order, payee, busy, run }: { order: StandingOrder; payee?: strin
       {open && (
         <div className="mt-3 border-t border-line pt-3">
           {order.kind === "pay" && (
-            <AutoPay order={order} busy={busy} onSave={(minor) => void run(() => updateStanding(order.id, { action: "set_auto", autoMaxMinor: minor }))} />
+            <AutoPay order={order} busy={busy} onSave={(terms) => void run(() => updateStanding(order.id, { action: "set_auto", ...terms }))} />
           )}
           <div className="mt-2 flex gap-2">
             <button
@@ -262,8 +298,7 @@ function CreateForm({ onCancel, onCreate, busy }: { onCancel: () => void; onCrea
   const [month, setMonth] = useState(1);
   const [n, setN] = useState(14);
   const [runs, setRuns] = useState("");
-  const [auto, setAuto] = useState(false);
-  const [limit, setLimit] = useState("");
+  const [auto, setAuto] = useState<AutoState>(() => initialAuto());
   const [direction, setDirection] = useState<"above" | "below">("above");
   const [rate, setRate] = useState("");
   const [err, setErr] = useState("");
@@ -286,8 +321,7 @@ function CreateForm({ onCancel, onCreate, busy }: { onCancel: () => void; onCrea
       const naira = amount.replace(/[,\s₦]/g, "");
       if (!/^[1-9]\d{0,9}(\.\d{1,2})?$/.test(naira)) throw new Error("Enter an amount in naira, e.g. 150000");
       if (!purpose.trim()) throw new Error("Say what it's for, e.g. rent");
-      const autoMaxMinor = auto ? toMinor(limit) : null;
-      if (auto && !autoMaxMinor) throw new Error("Enter a limit for auto-pay");
+      const terms = buildTerms(auto);
       onCreate({
         kind,
         label: label.trim(),
@@ -296,7 +330,9 @@ function CreateForm({ onCancel, onCreate, busy }: { onCancel: () => void; onCrea
         purpose: purpose.trim(),
         schedule,
         ...(runs.trim() ? { runs: Number(runs) } : {}),
-        ...(autoMaxMinor ? { autoMaxMinor } : {}),
+        ...(terms.autoMaxMinor
+          ? { autoMaxMinor: terms.autoMaxMinor, autoUntil: terms.autoUntil, ...(terms.autoTotalMinor ? { autoTotalMinor: terms.autoTotalMinor } : {}) }
+          : {}),
       });
     } catch (e) {
       setErr((e as Error).message);
@@ -381,16 +417,7 @@ function CreateForm({ onCancel, onCreate, busy }: { onCancel: () => void; onCrea
           <label className={labelCls} htmlFor="r-runs">Stop after (optional)</label>
           <input id="r-runs" inputMode="numeric" value={runs} onChange={(e) => setRuns(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="Number of payments" className={`${field} mb-3`} />
           <div className={labelCls}>Approval</div>
-          <div className="mb-2 flex flex-wrap gap-1.5">
-            <button type="button" className={chip(!auto)} onClick={() => setAuto(false)}>Ask me each time</button>
-            <button type="button" className={chip(auto)} onClick={() => setAuto(true)}>Pay automatically</button>
-          </div>
-          {auto && (
-            <>
-              <input inputMode="decimal" aria-label="Most per payment in USDC" value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="Most per payment, USDC (e.g. 110)" className={`${field} mb-1`} />
-              <p className="mb-3 text-[11.5px] leading-[1.4] text-faint">A run that costs more waits for your approval. Your account limits still apply.</p>
-            </>
-          )}
+          <AutoFields state={auto} set={setAuto} busy={busy} id="new" />
         </>
       )}
 

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { SelectRow } from "@/components/SelectRow";
 import {
   type Settings,
-  disconnect,
   fromMinor,
   loadSettings,
   saveSettings,
@@ -160,29 +159,14 @@ export function Configuration() {
 
       <div className={card}>
         <div className={heading}>Connected AI apps</div>
-        {connections.length ? (
-          <ul className="mb-3 flex flex-col gap-2">
-            {connections.map((c) => (
-              <li key={c.id} className="flex items-center justify-between gap-3 text-[13.5px]">
-                <span className="min-w-0">
-                  <span className="block font-semibold text-ink">{c.name}</span>
-                  <span className="block text-[11.5px] text-faint">
-                    Until {new Date(c.expiresAt).toLocaleDateString()}
-                  </span>
-                </span>
-                <button
-                  disabled={busy}
-                  onClick={() => run(() => disconnect(c.id))}
-                  className="shrink-0 rounded-full bg-line px-3.5 py-2 text-[12.5px] font-bold text-ink transition-colors hover:bg-red-tint disabled:opacity-40"
-                >
-                  Disconnect
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mb-3 text-[13px] text-faint">No AI apps connected yet.</p>
-        )}
+        <p className="mb-3 text-[13px] text-faint">
+          {connections.length
+            ? `${connections.length} connected: ${connections.map((c) => c.name).join(", ")}.`
+            : "No AI apps connected yet."}{" "}
+          <a href="/permissions" className="font-semibold text-ink underline underline-offset-2">
+            Manage in Permissions
+          </a>
+        </p>
         {mcpUrl && (
           <>
             <p className="mb-2 text-[13px] leading-[1.45] text-ink">

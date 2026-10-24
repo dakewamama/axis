@@ -1,4 +1,5 @@
 // Recurring tasks (scheduled payments to saved people, rate alerts), stored and run by brain.
+import { usdc } from "@/lib/activity";
 export type Schedule =
   | { every: "month"; day: number }
   | { every: "week"; weekday: number }
@@ -17,6 +18,11 @@ export type StandingOrder = {
   nextRunAt: string | null;
   runsLeft: number | null;
   source: "user" | "assistant";
+  autoUntil: string | null;
+  autoTotalMinor: string | null;
+  autoUsedMinor: string;
+  originText: string | null;
+  autoRuns: number;
   lastRun: { dueAt: string; outcome: string; detail: string } | null;
 };
 
@@ -33,8 +39,11 @@ async function call(path: string, body?: unknown): Promise<StandingOrder[]> {
 
 export const loadStanding = () => call("/api/standing");
 export const createStanding = (body: Record<string, unknown>) => call("/api/standing", body);
-export const confirmStanding = (id: string, autoMaxMinor: string | null) => call(`/api/standing/${id}/confirm`, { autoMaxMinor });
-export const updateStanding = (id: string, body: { action: "pause" | "resume" | "end" | "set_auto"; autoMaxMinor?: string | null }) =>
+/** Auto-pay terms: most per payment, when it ends, and an optional total allowance (USDC base units). */
+export type AutoTerms = { autoMaxMinor: string | null; autoUntil?: string; autoTotalMinor?: string | null };
+
+export const confirmStanding = (id: string, terms: AutoTerms) => call(`/api/standing/${id}/confirm`, terms);
+export const updateStanding = (id: string, body: { action: "pause" | "resume" | "end" | "set_auto" } & Partial<AutoTerms>) =>
   call(`/api/standing/${id}`, body);
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -49,3 +58,11 @@ export function describeSchedule(s: Schedule): string {
 }
 
 export { WEEKDAYS, MONTHS };
+
+/** "auto-pay up to 110.00 USDC each, 10.30 of 300.00 used, until 24 Apr" */
+export function autoSummary(o: StandingOrder): string {
+  const until = o.autoUntil ? new Date(o.autoUntil).toLocaleDateString("en-NG", { timeZone: "Africa/Lagos", day: "numeric", month: "short", year: "numeric" }) : "";
+  const total = o.autoTotalMinor ? `, ${usdc(o.autoUsedMinor)} of ${usdc(o.autoTotalMinor)} used` : "";
+  return `auto-pay up to ${usdc(o.autoMaxMinor!)} each${total}${until ? `, until ${until}` : ""}`;
+}
+
