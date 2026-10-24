@@ -145,7 +145,7 @@ export default function HomePage() {
             <div className="grid grid-cols-2 gap-2.5">
               <Tile
                 title="Saved details"
-                detail={loaded ? `${vault.beneficiaries.length} people · ${vault.addresses.length} addresses · ${vault.phones.length} lines` : "People, addresses, phones"}
+                detail={loaded ? [count(vault.beneficiaries.length, "person", "people"), count(vault.addresses.length, "address", "addresses"), count(vault.phones.length, "line", "lines")].join(" · ") : "People, addresses, phones"}
                 onClick={() => router.push("/vault")}
               />
               <Tile
@@ -198,6 +198,9 @@ export default function HomePage() {
     </PhoneFrame>
   );
 }
+
+/** "1 person", "2 people". */
+const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 function Heading({ children }: { children: React.ReactNode }) {
   return <div className="mb-2 text-[10px] font-bold tracking-[0.1em] text-faint uppercase">{children}</div>;
