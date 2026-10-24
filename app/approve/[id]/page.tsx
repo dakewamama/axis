@@ -6,8 +6,10 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { useGuard } from "@/components/useGuard";
 import { usePin } from "@/components/PinProvider";
 import { readOrPin } from "@/lib/pin";
+import { NGN, lagosTime } from "@/lib/format";
 
-type Request = { id: string; status: string; summary: string; expiresAt: string; outcome?: string };
+type Payee = { paidBefore: number; lastPaidAt?: string; lastAmountKobo?: string };
+type Request = { id: string; status: string; summary: string; expiresAt: string; outcome?: string; payee?: Payee };
 
 const STATUS: Record<string, string> = {
   pending: "Waiting for your decision",
@@ -98,6 +100,7 @@ export default function ApprovePage() {
                 {STATUS[request.status] ?? request.status}
               </div>
               <p className="text-[15px] leading-[1.5] text-pretty text-ink">{request.summary}</p>
+              {pending && request.payee && <PayeeHistory payee={request.payee} />}
               {request.outcome && <p className="mt-3 text-[13.5px] leading-[1.45] text-muted">{request.outcome}</p>}
               {result && <p className="mt-3 text-[13.5px] leading-[1.45] font-semibold text-ink" aria-live="polite">{result}</p>}
               {pending && (
@@ -128,5 +131,22 @@ export default function ApprovePage() {
         </div>
       </main>
     </PhoneFrame>
+  );
+}
+
+/** Whether this account has been paid before: a first-time payee is the moment to double-check. */
+function PayeeHistory({ payee }: { payee: Payee }) {
+  if (!payee.paidBefore)
+    return (
+      <p className="mt-3 rounded-[14px] bg-red-tint px-3.5 py-2.5 text-[13px] leading-[1.45] font-semibold text-red-deep">
+        First time paying this account. Make sure the number is right: a bank transfer can&rsquo;t be pulled back.
+      </p>
+    );
+  const times = payee.paidBefore === 1 ? "once" : `${payee.paidBefore} times`;
+  const last = payee.lastAmountKobo && payee.lastPaidAt ? `, last ${NGN(Number(payee.lastAmountKobo) / 100)} on ${lagosTime(payee.lastPaidAt)}` : "";
+  return (
+    <p className="mt-3 rounded-[14px] bg-field px-3.5 py-2.5 text-[13px] leading-[1.45] text-muted">
+      You&rsquo;ve paid this account {times} before{last}.
+    </p>
   );
 }
