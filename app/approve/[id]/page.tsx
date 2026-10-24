@@ -56,11 +56,11 @@ export default function ApprovePage() {
     setError("");
     try {
       // Approving asks for the transaction PIN; declining never does.
-      const outcome = await withPin(async (pin) => {
+      const outcome = await withPin(async (cred) => {
         const res = await fetch(`/api/payments/${id}/decide`, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ decision, ...(pin ? { pin } : {}) }),
+          body: JSON.stringify({ decision, ...cred }),
         });
         return readOrPin<{ text: string }>(res, "Couldn't record your decision. Try again.");
       });

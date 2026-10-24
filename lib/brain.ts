@@ -14,12 +14,12 @@ export function brainConfigured(): boolean {
 export async function brain(
   req: NextRequest,
   path: string,
-  options: { body?: unknown; userToken?: string; timeoutMs?: number } = {},
+  options: { body?: unknown; userToken?: string; timeoutMs?: number; method?: "GET" | "POST" | "DELETE" } = {},
 ): Promise<{ status: number; data: Record<string, unknown> }> {
   if (!brainConfigured()) throw new Error("brain is not configured");
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
   const res = await fetch(`${BRAIN_URL}/web/${path}`, {
-    method: options.body === undefined ? "GET" : "POST",
+    method: options.method ?? (options.body === undefined ? "GET" : "POST"),
     headers: {
       "content-type": "application/json",
       "x-axis-web-token": AXIS_WEB_TOKEN!,

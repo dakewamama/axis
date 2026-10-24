@@ -25,6 +25,7 @@ service URLs and tokens server-side and forward to:
 | `/api/standing`, `/api/standing/<id>[/confirm]` | brain `/web/standing*` | recurring payments and rate alerts (`/recurring`) |
 | `/api/payments/request`, `/api/payments/<id>/decide` | brain `/web/payments/*` | start a payment to a saved person or place; approve (with PIN) or decline |
 | `/api/pin` | brain `/web/pin` | transaction PIN status, create and change |
+| `/api/passkeys`, `/api/passkeys/register[/finish]`, `/api/passkeys/auth`, `/api/passkeys/<id>` | brain `/web/passkeys*` | passkeys: list, enrol, step-up challenge, remove |
 | `/api/banks` | brain `/web/banks` | banks Axis can pay, for suggestions |
 | `/api/payments/<id>` | brain `/web/payments/:id` | a payment waiting for approval (`/approve/<id>`, linked from connected AI apps), with whether the user has paid that account before |
 | `/api/notices` | brain `/web/notices` | updates on the Home screen (payment outcomes, recurring runs) |
@@ -41,6 +42,12 @@ payment, turning auto-pay on and loosening limits also need the transaction PIN.
 Every route acts only for the user in a valid signed session;
 any `userId` in a request body or query is ignored. A missing or invalid cookie
 gets `401`. Without `AXIS_SESSION_SECRET`, sign-in is refused (`503`).
+
+Anything that moves money is approved with a step-up: the transaction PIN, or a
+passkey (Face ID, fingerprint or security key) enrolled on the device. The
+passkey's private key never leaves the device; brain keeps only its public key.
+Passkeys are available only when brain has `WEB_ORIGIN` set, since that origin is
+the passkey's relying party.
 
 `npm run build` first runs `scripts/check-forbidden.mjs`, which fails the build
 if client code reintroduces a `NEXT_PUBLIC_` variable named like a secret or

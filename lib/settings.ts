@@ -1,4 +1,4 @@
-import { readOrPin } from "@/lib/pin";
+import { type Cred, readOrPin } from "@/lib/pin";
 // The user's Axis configuration, as brain enforces it for every connected app.
 export type ServiceSetting = { id: string; label: string; note: string; enabled: boolean };
 export type Limits = {
@@ -28,8 +28,8 @@ export const loadSettings = () => call("/api/settings");
 /** Save settings. Anything that lets more money move needs the transaction PIN (see usePin). */
 export const saveSettings = (
   patch: { disabledServices?: string[]; perPaymentMinor?: string | null; monthlyMinor?: string | null; spendingPaused?: boolean },
-  pin?: string,
-) => call("/api/settings", { ...patch, ...(pin ? { pin } : {}) });
+  cred?: Cred,
+) => call("/api/settings", { ...patch, ...cred });
 export const disconnect = (id: string) => call("/api/connections/revoke", { id });
 
 /** "12.5" USDC -> "12500000" base units; null for empty; throws on bad input. */

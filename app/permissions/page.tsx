@@ -7,6 +7,7 @@ import { useGuard } from "@/components/useGuard";
 import { usePin } from "@/components/PinProvider";
 import { lagosTime } from "@/lib/format";
 import { disconnect, saveSettings } from "@/lib/settings";
+import type { Cred } from "@/lib/pin";
 import { type StandingOrder, autoSummary, describeSchedule, updateStanding } from "@/lib/standing";
 
 type App = { id: string; name: string; until: string; can: string };
@@ -35,7 +36,7 @@ export default function PermissionsPage() {
   }, []);
 
   const act = useCallback(
-    async (action: (pin?: string) => Promise<unknown>) => {
+    async (action: (cred?: Cred) => Promise<unknown>) => {
       setBusy(true);
       setError("");
       try {
@@ -89,7 +90,7 @@ export default function PermissionsPage() {
                   aria-checked={data.spendingPaused}
                   aria-label="Pause all spending"
                   disabled={busy}
-                  onClick={() => void act((pin) => saveSettings({ spendingPaused: !data.spendingPaused }, pin))}
+                  onClick={() => void act((cred) => saveSettings({ spendingPaused: !data.spendingPaused }, cred))}
                   className={`relative mt-1 h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-40 ${data.spendingPaused ? "bg-red" : "bg-unfilled"}`}
                 >
                   <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${data.spendingPaused ? "left-6" : "left-1"}`} />

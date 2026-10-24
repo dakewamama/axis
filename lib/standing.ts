@@ -1,6 +1,6 @@
 // Recurring tasks (scheduled payments to saved people, rate alerts), stored and run by brain.
 import { usdc } from "@/lib/activity";
-import { readOrPin } from "@/lib/pin";
+import { type Cred, readOrPin } from "@/lib/pin";
 export type Schedule =
   | { every: "month"; day: number }
   | { every: "week"; weekday: number }
@@ -37,15 +37,14 @@ async function call(path: string, body?: unknown): Promise<StandingOrder[]> {
 }
 
 export const loadStanding = () => call("/api/standing");
-const withPin = (pin?: string) => (pin ? { pin } : {});
 /** Turning on auto-pay needs the transaction PIN (see usePin). */
-export const createStanding = (body: Record<string, unknown>, pin?: string) => call("/api/standing", { ...body, ...withPin(pin) });
+export const createStanding = (body: Record<string, unknown>, cred?: Cred) => call("/api/standing", { ...body, ...cred });
 /** Auto-pay terms: most per payment, when it ends, and an optional total allowance (USDC base units). */
 export type AutoTerms = { autoMaxMinor: string | null; autoUntil?: string; autoTotalMinor?: string | null };
 
-export const confirmStanding = (id: string, terms: AutoTerms, pin?: string) => call(`/api/standing/${id}/confirm`, { ...terms, ...withPin(pin) });
-export const updateStanding = (id: string, body: { action: "pause" | "resume" | "end" | "set_auto" } & Partial<AutoTerms>, pin?: string) =>
-  call(`/api/standing/${id}`, { ...body, ...withPin(pin) });
+export const confirmStanding = (id: string, terms: AutoTerms, cred?: Cred) => call(`/api/standing/${id}/confirm`, { ...terms, ...cred });
+export const updateStanding = (id: string, body: { action: "pause" | "resume" | "end" | "set_auto" } & Partial<AutoTerms>, cred?: Cred) =>
+  call(`/api/standing/${id}`, { ...body, ...cred });
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];

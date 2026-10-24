@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { SelectRow } from "@/components/SelectRow";
 import { usePin } from "@/components/PinProvider";
-import { pinStatus } from "@/lib/pin";
+import { type Cred, type Passkey, enrollPasskey, listPasskeys, passkeysSupported, pinStatus, removePasskey } from "@/lib/pin";
 import {
   type Settings,
   fromMinor,
@@ -46,7 +46,7 @@ export function Configuration() {
   }, []);
 
   /** Run a change; if it needs the transaction PIN, the user is asked for it. */
-  async function run(action: (pin?: string) => Promise<Settings>) {
+  async function run(action: (cred?: Cred) => Promise<Settings>) {
     setBusy(true);
     setError("");
     try {
@@ -91,7 +91,7 @@ export function Configuration() {
             aria-checked={settings.spendingPaused}
             aria-label="Pause all spending"
             disabled={busy}
-            onClick={() => run((pin) => saveSettings({ spendingPaused: !settings.spendingPaused }, pin))}
+            onClick={() => run((cred) => saveSettings({ spendingPaused: !settings.spendingPaused }, cred))}
             className={`relative mt-1 h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-40 ${settings.spendingPaused ? "bg-red" : "bg-unfilled"}`}
           >
             <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${settings.spendingPaused ? "left-6" : "left-1"}`} />
@@ -130,6 +130,8 @@ export function Configuration() {
         </div>
       </div>
 
+      <PasskeyCard />
+
       <div className={card}>
         <div className={heading}>Services</div>
         <div className="flex flex-col gap-2.5">
@@ -141,10 +143,10 @@ export function Configuration() {
               selected={s.enabled}
               disabled={busy}
               onClick={() =>
-                run((pin) =>
+                run((cred) =>
                   saveSettings(
                     { disabledServices: s.enabled ? [...disabled, s.id] : disabled.filter((id) => id !== s.id) },
-                    pin,
+                    cred,
                   ),
                 )
               }
@@ -192,7 +194,7 @@ export function Configuration() {
               setError((e as Error).message);
               return;
             }
-            if (await run((pin) => saveSettings(patch, pin))) setSaved(true);
+            if (await run((cred) => saveSettings(patch, cred))) setSaved(true);
           }}
           className="w-full rounded-full bg-ink py-3.5 text-sm font-bold text-white transition-colors hover:bg-red disabled:opacity-40"
         >
@@ -230,5 +232,82 @@ export function Configuration() {
 
       {error && <p className="mb-4 text-[13.5px] font-medium text-red">{error}</p>}
     </>
+  );
+}
+
+/** Enrol or remove a passkey: a device biometric or security key used in place of the PIN. */
+function PasskeyCard() {
+  const [passkeys, setPasskeys] = useState<Passkey[] | null>(null);
+  const [available, setAvailable] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    listPasskeys()
+      .then(({ passkeys, available }) => {
+        setPasskeys(passkeys);
+        setAvailable(available);
+      })
+      .catch(() => setPasskeys([]));
+  }, []);
+
+  if (passkeys === null || !available || !passkeysSupported()) return null;
+
+  async function add() {
+    setBusy(true);
+    setNote("");
+    try {
+      setPasskeys(await enrollPasskey(`Passkey on ${new Date().toLocaleDateString("en-NG")}`));
+      setNote("Passkey added. You can approve payments with it.");
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : "Couldn't add a passkey.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(id: string) {
+    setBusy(true);
+    setNote("");
+    try {
+      setPasskeys(await removePasskey(id));
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : "Couldn't remove the passkey.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className={card}>
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-[15px] font-bold text-ink">Passkey</div>
+          <p className="mt-0.5 text-[12.5px] leading-[1.45] text-faint">
+            Approve payments with Face ID, a fingerprint or a security key instead of your PIN. Your PIN still works as a backup.
+          </p>
+        </div>
+        <button
+          disabled={busy}
+          onClick={add}
+          className="shrink-0 rounded-full bg-ink px-4 py-2.5 text-[12.5px] font-bold text-white transition-colors hover:bg-red disabled:opacity-40"
+        >
+          Add passkey
+        </button>
+      </div>
+      {passkeys.length > 0 && (
+        <ul className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
+          {passkeys.map((p) => (
+            <li key={p.credentialId} className="flex items-center gap-3">
+              <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{p.label}</span>
+              <button disabled={busy} onClick={() => remove(p.credentialId)} className="shrink-0 text-[12px] font-semibold text-red hover:text-red-dark disabled:opacity-40">
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {note && <p className="mt-2 text-[12px] font-semibold text-ink" aria-live="polite">{note}</p>}
+    </div>
   );
 }

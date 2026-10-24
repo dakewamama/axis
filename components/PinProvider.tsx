@@ -2,18 +2,19 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Sheet } from "@/components/Sheet";
-import { PinNeeded, pinStatus, setPin } from "@/lib/pin";
+import { type Cred, PinNeeded, listPasskeys, passkeyStepUp, passkeysSupported, pinStatus, setPin } from "@/lib/pin";
 
 type Mode = "enter" | "create" | "confirm";
 type Ask = { mode: Mode; message: string; resolve: (pin: string | null) => void };
 
 type PinState = {
   /**
-   * Run an action that may need the transaction PIN. It is tried without one;
-   * if brain asks for the PIN, the user is prompted (or asked to create one) and
-   * the action is retried with it. Resolves null if the user cancels.
+   * Run an action that may need a step-up. It is tried with no credential; if
+   * brain asks for one, the user approves with a passkey (when they have one on
+   * this device) or their transaction PIN, and the action is retried with it.
+   * Resolves null if the user cancels.
    */
-  withPin: <T>(action: (pin?: string) => Promise<T>) => Promise<T | null>;
+  withPin: <T>(action: (cred?: Cred) => Promise<T>) => Promise<T | null>;
   /** Create or change the PIN from Settings. */
   changePin: () => Promise<boolean>;
 };
@@ -49,30 +50,60 @@ export function PinProvider({ children }: { children: React.ReactNode }) {
     [prompt],
   );
 
+  /** A step-up credential: a passkey when the user has one here, otherwise the PIN. */
+  const stepUpCred = useCallback(
+    async (message: string, allowPasskey: boolean): Promise<Cred | null> => {
+      if (allowPasskey && passkeysSupported()) {
+        try {
+          const { passkeys, available } = await listPasskeys();
+          if (available && passkeys.length > 0) {
+            try {
+              return { passkey: await passkeyStepUp() };
+            } catch {
+              // The user cancelled the biometric or it failed; fall back to the PIN.
+            }
+          }
+        } catch {
+          // Couldn't check for passkeys; fall back to the PIN.
+        }
+      }
+      const pin = await prompt("enter", message);
+      return pin ? { pin } : null;
+    },
+    [prompt],
+  );
+
   const withPin = useCallback(
-    async <T,>(action: (pin?: string) => Promise<T>): Promise<T | null> => {
-      let pin: string | undefined;
+    async <T,>(action: (cred?: Cred) => Promise<T>): Promise<T | null> => {
+      let cred: Cred | undefined;
+      let allowPasskey = true;
       for (;;) {
         try {
-          return await action(pin);
+          return await action(cred);
         } catch (e) {
           if (!(e instanceof PinNeeded)) throw e;
           if (e.code === "pin_locked") throw new Error(e.message);
-          const next =
-            e.code === "pin_not_set"
-              ? await createPin()
-              : await prompt(
-                  "enter",
-                  e.code === "wrong_pin"
-                    ? `${e.message}${e.attemptsLeft !== undefined ? ` ${e.attemptsLeft} ${e.attemptsLeft === 1 ? "try" : "tries"} left.` : ""}`
-                    : "Enter your transaction PIN.",
-                );
+          if (e.code === "pin_not_set") {
+            const pin = await createPin();
+            if (!pin) return null;
+            cred = { pin };
+            continue;
+          }
+          // Don't silently retry a passkey the server just rejected: offer the PIN next.
+          if (e.code === "passkey_failed" || e.code === "passkey_unavailable") allowPasskey = false;
+          const message =
+            e.code === "wrong_pin"
+              ? `${e.message}${e.attemptsLeft !== undefined ? ` ${e.attemptsLeft} ${e.attemptsLeft === 1 ? "try" : "tries"} left.` : ""}`
+              : e.code === "passkey_failed"
+                ? `${e.message}`
+                : "Enter your transaction PIN.";
+          const next = await stepUpCred(message, allowPasskey);
           if (!next) return null;
-          pin = next;
+          cred = next;
         }
       }
     },
-    [createPin, prompt],
+    [createPin, stepUpCred],
   );
 
   const changePin = useCallback(async () => {

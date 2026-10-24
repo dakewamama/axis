@@ -1,5 +1,6 @@
 "use client";
 
+import type { Cred } from "@/lib/pin";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
@@ -48,7 +49,7 @@ export default function RecurringPage() {
   const { withPin } = usePin();
 
   /** Run a change; turning on auto-pay asks for the transaction PIN. */
-  const run = useCallback(async (action: (pin?: string) => Promise<StandingOrder[]>) => {
+  const run = useCallback(async (action: (cred?: Cred) => Promise<StandingOrder[]>) => {
     setBusy(true);
     setError("");
     try {
@@ -116,7 +117,7 @@ export default function RecurringPage() {
               <CreateForm
                 onCancel={() => setCreating(false)}
                 onCreate={async (body) => {
-                  if (await run((pin) => createStanding(body, pin))) setCreating(false);
+                  if (await run((cred) => createStanding(body, cred))) setCreating(false);
                 }}
                 busy={busy}
               />
@@ -136,7 +137,7 @@ export default function RecurringPage() {
   );
 }
 
-type Run = (action: (pin?: string) => Promise<StandingOrder[]>) => Promise<boolean>;
+type Run = (action: (cred?: Cred) => Promise<StandingOrder[]>) => Promise<boolean>;
 
 function summary(o: StandingOrder, payee?: string): string {
   if (o.kind === "rate_alert") return `When 1 USDC is ${o.spec.direction} ₦${(o.spec.ngnPerUsdc ?? 0).toLocaleString("en-NG")}`;
@@ -226,7 +227,7 @@ function Proposed({ order, payee, busy, run }: { order: StandingOrder; payee?: s
       <div className="mb-1 text-[10px] font-bold tracking-[0.09em] text-red-deep uppercase">Suggested in chat · needs you</div>
       <div className="text-[15px] font-bold text-ink">{order.label}</div>
       <div className="mt-0.5 text-[12.5px] text-muted">{summary(order, payee)}</div>
-      <AutoPay order={order} busy={busy} saveLabel="Set it up" onSave={(terms) => void run((pin) => confirmStanding(order.id, terms, pin))} />
+      <AutoPay order={order} busy={busy} saveLabel="Set it up" onSave={(terms) => void run((cred) => confirmStanding(order.id, terms, cred))} />
       <button
         disabled={busy}
         onClick={() => void run(() => updateStanding(order.id, { action: "end" }))}
@@ -265,7 +266,7 @@ function Task({ order, payee, busy, run }: { order: StandingOrder; payee?: strin
       {open && (
         <div className="mt-3 border-t border-line pt-3">
           {order.kind === "pay" && (
-            <AutoPay order={order} busy={busy} onSave={(terms) => void run((pin) => updateStanding(order.id, { action: "set_auto", ...terms }, pin))} />
+            <AutoPay order={order} busy={busy} onSave={(terms) => void run((cred) => updateStanding(order.id, { action: "set_auto", ...terms }, cred))} />
           )}
           <div className="mt-2 flex gap-2">
             <button
