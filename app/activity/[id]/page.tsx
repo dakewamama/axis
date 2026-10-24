@@ -13,6 +13,7 @@ import {
   explorer,
   loadActivityItem,
   naira,
+  receiptText,
   reportProblem,
   sol,
   usdc,
@@ -138,6 +139,7 @@ export default function ActivityDetailPage() {
                   </ol>
                 </>
               )}
+              {data.receipt && <ShareReceipt text={receiptText(data.receipt, lagosTime(data.receipt.completedAt))} />}
               <Reports
                 reports={data.reports}
                 reasons={data.reasons}
@@ -250,6 +252,35 @@ function Reports({
           Report a problem
         </button>
       )}
+    </div>
+  );
+}
+
+/** Share the receipt (phone share sheet where available), or copy it. */
+function ShareReceipt({ text }: { text: string }) {
+  const [done, setDone] = useState("");
+  return (
+    <div className="mt-6">
+      <button
+        onClick={async () => {
+          setDone("");
+          try {
+            if (navigator.share) {
+              await navigator.share({ title: "Axis payment receipt", text });
+              return;
+            }
+            await navigator.clipboard.writeText(text);
+            setDone("Receipt copied");
+          } catch (e) {
+            if ((e as Error).name !== "AbortError") setDone("Couldn't share. Select the receipt below to copy it.");
+          }
+        }}
+        className="w-full rounded-full bg-ink py-3 text-[13.5px] font-bold text-white transition-colors hover:bg-red"
+      >
+        Share receipt
+      </button>
+      {done && <p className="mt-2 text-center text-[12px] text-faint" aria-live="polite">{done}</p>}
+      <pre className="mt-3 overflow-x-auto rounded-[16px] bg-white p-3.5 font-mono text-[11.5px] leading-[1.6] whitespace-pre-wrap text-muted shadow-card select-all">{text}</pre>
     </div>
   );
 }

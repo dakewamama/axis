@@ -48,12 +48,43 @@ export type SupportReport = {
   updatedAt: string;
 };
 
+/** A completed payment's receipt: enough for the payee's bank to trace the transfer. */
+export type Receipt = {
+  axisReference: string;
+  completedAt: string;
+  payee: { bank: string; accountNumber: string };
+  reference: string;
+  amountKobo: string;
+  rail?: string;
+  providerOrderId?: string;
+  fundingAsset?: string;
+  fundingTransaction?: string;
+  payoutProof?: string;
+};
+
 export type ActivityDetail = {
   item: ActivityItem;
   timeline: TimelineEntry[];
   reports: SupportReport[];
   reasons: Record<string, string>;
+  receipt?: Receipt;
 };
+
+/** The receipt as plain text to share or paste into a chat with the payee. */
+export function receiptText(r: Receipt, when: string): string {
+  return [
+    "Axis payment receipt",
+    `Paid ${naira(r.amountKobo)} to ${r.payee.bank} ${r.payee.accountNumber}`,
+    `Reference: ${r.reference}`,
+    `Completed: ${when}`,
+    r.rail && r.providerOrderId ? `${r.rail.toUpperCase()} order: ${r.providerOrderId}` : "",
+    r.payoutProof ? `Payout proof: ${r.payoutProof}` : "",
+    r.fundingTransaction ? `Funded with ${r.fundingAsset ?? "USDC"}, Solana transaction: ${r.fundingTransaction}` : "",
+    `Axis reference: ${r.axisReference}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
 
 export type TimelineEntry = { at: string; text: string; proof?: string };
 
@@ -112,7 +143,7 @@ export async function loadActivityItem(id: string): Promise<ActivityDetail> {
   const res = await fetch(`/api/activity/${encodeURIComponent(id)}`, { cache: "no-store" });
   const data = (await res.json().catch(() => ({}))) as Partial<ActivityDetail> & { error?: string };
   if (!res.ok || !data.item) throw new Error(res.status === 404 ? "This isn't in your activity." : data.error || "Couldn't load this.");
-  return { item: data.item, timeline: data.timeline ?? [], reports: data.reports ?? [], reasons: data.reasons ?? {} };
+  return { item: data.item, timeline: data.timeline ?? [], reports: data.reports ?? [], reasons: data.reasons ?? {}, ...(data.receipt ? { receipt: data.receipt } : {}) };
 }
 
 export async function reportProblem(id: string, reason: string, details: string): Promise<SupportReport[]> {

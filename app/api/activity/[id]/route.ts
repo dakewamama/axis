@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/activity/[id
     const { status, data } = await brain(req, `activity/${encodeURIComponent(id)}`, { userToken: session.token });
     if (status !== 200) return NextResponse.json(data, { status });
     return NextResponse.json(
-      { item, timeline: data.timeline ?? [], reports: data.reports ?? [], reasons: data.reasons ?? {} },
+      { item, timeline: data.timeline ?? [], reports: data.reports ?? [], reasons: data.reasons ?? {}, ...(data.receipt ? { receipt: data.receipt } : {}) },
       { headers: { "cache-control": "no-store" } },
     );
   } catch {
