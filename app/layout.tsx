@@ -4,6 +4,7 @@ import { OnboardingProvider } from "@/components/OnboardingProvider";
 import { WalletProvider } from "@/components/WalletProvider";
 import { LocationProvider } from "@/components/LocationProvider";
 import { VaultProvider } from "@/components/VaultProvider";
+import { PinProvider } from "@/components/PinProvider";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -68,7 +69,9 @@ export default function RootLayout({
         <OnboardingProvider>
           <WalletProvider>
             <VaultProvider>
-              <LocationProvider>{children}</LocationProvider>
+              <PinProvider>
+                <LocationProvider>{children}</LocationProvider>
+              </PinProvider>
             </VaultProvider>
           </WalletProvider>
         </OnboardingProvider>

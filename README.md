@@ -13,12 +13,13 @@ service URLs and tokens server-side and forward to:
 | `/api/auth`, `/api/auth/name` | brain `/web/signup`, `/web/login`, `/web/name` | email/password account, display name |
 | `/api/auth/me`, `/api/auth/logout` | brain `/web/me`, `/web/logout` | restore the session, sign out (revokes the brain session) |
 | `/api/wallet` | onboarding `/wallet`, `/wallet/balance` | provision the custodial wallet, read the spendable balance |
-| `/api/chat` | brain `/web/chat` | the Axis assistant |
 | `/api/location`, `/api/place` | brain `/web/location`, `/web/place` | precise device location; the place you're at (from GPS or a tag) |
 | `/api/settings`, `/api/connections/revoke` | brain `/web/settings`, `/web/connections/revoke` | the user's configuration (`/services`): services on/off, personal spending limits, connected AI apps |
 | `/api/vault`, `/api/vault/<section>[/<id>[/delete]]` | brain `/web/vault/*` | saved people you pay, addresses and phone lines (`/vault`) |
 | `/api/activity`, `/api/activity/<id>` | brain `/web/activity*` + onboarding `/wallet/activity` | transaction history (`/activity`): payments and requests from any app, deposits and debits, with status and a timeline |
 | `/api/standing`, `/api/standing/<id>[/confirm]` | brain `/web/standing*` | recurring payments and rate alerts (`/recurring`) |
+| `/api/payments/request`, `/api/payments/<id>/decide` | brain `/web/payments/*` | start a payment to a saved person or place; approve (with PIN) or decline |
+| `/api/pin` | brain `/web/pin` | transaction PIN status, create and change |
 | `/api/banks` | brain `/web/banks` | banks Axis can pay, for suggestions |
 | `/api/payments/<id>` | brain `/web/payments/:id` | a payment waiting for approval (`/approve/<id>`, linked from connected AI apps) |
 | `/t/<code>` | none | QR/NFC seat tag link; opens chat on that place and seat |

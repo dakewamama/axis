@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { useGuard } from "@/components/useGuard";
+import { usePin } from "@/components/PinProvider";
+import { readOrPin } from "@/lib/pin";
 
 type Request = { id: string; status: string; summary: string; expiresAt: string; outcome?: string };
 
@@ -28,6 +30,7 @@ export default function ApprovePage() {
   const [error, setError] = useState("");
   const [result, setResult] = useState("");
   const [busy, setBusy] = useState(false);
+  const { withPin } = usePin();
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/payments/${id}`, { cache: "no-store" });
@@ -50,14 +53,17 @@ export default function ApprovePage() {
     setBusy(true);
     setError("");
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ buttonId: `${decision}:${id}` }),
+      // Approving asks for the transaction PIN; declining never does.
+      const outcome = await withPin(async (pin) => {
+        const res = await fetch(`/api/payments/${id}/decide`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ decision, ...(pin ? { pin } : {}) }),
+        });
+        return readOrPin<{ text: string }>(res, "Couldn't record your decision. Try again.");
       });
-      const data = (await res.json().catch(() => ({}))) as { replies?: { text: string }[]; error?: string };
-      if (!res.ok) throw new Error(data.error || "Couldn't record your decision. Try again.");
-      setResult(data.replies?.map((r) => r.text).join("\n") ?? "");
+      if (!outcome) return;
+      setResult(outcome.text);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't record your decision. Try again.");
@@ -97,7 +103,7 @@ export default function ApprovePage() {
               {pending && (
                 <>
                   <p className="mt-3 text-[12.5px] text-faint">
-                    Nothing is paid until you approve. Check the account number and amount first.
+                    Nothing is paid until you approve with your PIN. Check the account name and amount first.
                   </p>
                   <div className="mt-4 flex gap-2">
                     <button

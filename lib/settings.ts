@@ -1,3 +1,4 @@
+import { readOrPin } from "@/lib/pin";
 // The user's Axis configuration, as brain enforces it for every connected app.
 export type ServiceSetting = { id: string; label: string; note: string; enabled: boolean };
 export type Limits = {
@@ -17,17 +18,18 @@ async function call(path: string, body?: unknown): Promise<Settings> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = (await res.json().catch(() => ({}))) as Settings & { error?: string };
-  if (!res.ok) throw new Error(data.error || `settings ${res.status}`);
-  return data;
+  return readOrPin<Settings>(res, `settings ${res.status}`);
 }
 
 // USDC has 6 decimals. (BigInt() rather than literals: tsconfig targets below ES2020.)
 const MICRO = BigInt(1_000_000);
 
 export const loadSettings = () => call("/api/settings");
-export const saveSettings = (patch: { disabledServices?: string[]; perPaymentMinor?: string | null; monthlyMinor?: string | null; spendingPaused?: boolean }) =>
-  call("/api/settings", patch);
+/** Save settings. Anything that lets more money move needs the transaction PIN (see usePin). */
+export const saveSettings = (
+  patch: { disabledServices?: string[]; perPaymentMinor?: string | null; monthlyMinor?: string | null; spendingPaused?: boolean },
+  pin?: string,
+) => call("/api/settings", { ...patch, ...(pin ? { pin } : {}) });
 export const disconnect = (id: string) => call("/api/connections/revoke", { id });
 
 /** "12.5" USDC -> "12500000" base units; null for empty; throws on bad input. */

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { useGuard } from "@/components/useGuard";
+import { usePin } from "@/components/PinProvider";
 import { lagosTime } from "@/lib/format";
 import { disconnect, saveSettings } from "@/lib/settings";
 import { type StandingOrder, autoSummary, describeSchedule, updateStanding } from "@/lib/standing";
@@ -24,6 +25,7 @@ export default function PermissionsPage() {
   const [data, setData] = useState<Permissions | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const { withPin } = usePin();
 
   const load = useCallback(async () => {
     const res = await fetch("/api/permissions", { cache: "no-store" });
@@ -33,11 +35,11 @@ export default function PermissionsPage() {
   }, []);
 
   const act = useCallback(
-    async (action: () => Promise<unknown>) => {
+    async (action: (pin?: string) => Promise<unknown>) => {
       setBusy(true);
       setError("");
       try {
-        await action();
+        await withPin(action);
         await load();
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
@@ -45,7 +47,7 @@ export default function PermissionsPage() {
         setBusy(false);
       }
     },
-    [load],
+    [load, withPin],
   );
 
   useEffect(() => {
@@ -87,7 +89,7 @@ export default function PermissionsPage() {
                   aria-checked={data.spendingPaused}
                   aria-label="Pause all spending"
                   disabled={busy}
-                  onClick={() => void act(() => saveSettings({ spendingPaused: !data.spendingPaused }))}
+                  onClick={() => void act((pin) => saveSettings({ spendingPaused: !data.spendingPaused }, pin))}
                   className={`relative mt-1 h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-40 ${data.spendingPaused ? "bg-red" : "bg-unfilled"}`}
                 >
                   <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${data.spendingPaused ? "left-6" : "left-1"}`} />

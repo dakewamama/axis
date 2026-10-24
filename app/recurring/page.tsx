@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { useGuard } from "@/components/useGuard";
+import { usePin } from "@/components/PinProvider";
 import { lagosTime } from "@/lib/format";
 import { useVault } from "@/components/VaultProvider";
 import { field } from "@/components/VaultForms";
@@ -44,12 +45,16 @@ export default function RecurringPage() {
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
+  const { withPin } = usePin();
 
-  const run = useCallback(async (action: () => Promise<StandingOrder[]>) => {
+  /** Run a change; turning on auto-pay asks for the transaction PIN. */
+  const run = useCallback(async (action: (pin?: string) => Promise<StandingOrder[]>) => {
     setBusy(true);
     setError("");
     try {
-      setOrders(await action());
+      const next = await withPin(action);
+      if (!next) return false;
+      setOrders(next);
       return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
@@ -57,7 +62,7 @@ export default function RecurringPage() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [withPin]);
 
   useEffect(() => {
     // Loading the user's tasks after mount.
@@ -111,7 +116,7 @@ export default function RecurringPage() {
               <CreateForm
                 onCancel={() => setCreating(false)}
                 onCreate={async (body) => {
-                  if (await run(() => createStanding(body))) setCreating(false);
+                  if (await run((pin) => createStanding(body, pin))) setCreating(false);
                 }}
                 busy={busy}
               />
@@ -131,7 +136,7 @@ export default function RecurringPage() {
   );
 }
 
-type Run = (action: () => Promise<StandingOrder[]>) => Promise<boolean>;
+type Run = (action: (pin?: string) => Promise<StandingOrder[]>) => Promise<boolean>;
 
 function summary(o: StandingOrder, payee?: string): string {
   if (o.kind === "rate_alert") return `When 1 USDC is ${o.spec.direction} ₦${(o.spec.ngnPerUsdc ?? 0).toLocaleString("en-NG")}`;
@@ -221,7 +226,7 @@ function Proposed({ order, payee, busy, run }: { order: StandingOrder; payee?: s
       <div className="mb-1 text-[10px] font-bold tracking-[0.09em] text-red-deep uppercase">Suggested in chat · needs you</div>
       <div className="text-[15px] font-bold text-ink">{order.label}</div>
       <div className="mt-0.5 text-[12.5px] text-muted">{summary(order, payee)}</div>
-      <AutoPay order={order} busy={busy} saveLabel="Set it up" onSave={(terms) => void run(() => confirmStanding(order.id, terms))} />
+      <AutoPay order={order} busy={busy} saveLabel="Set it up" onSave={(terms) => void run((pin) => confirmStanding(order.id, terms, pin))} />
       <button
         disabled={busy}
         onClick={() => void run(() => updateStanding(order.id, { action: "end" }))}
@@ -260,7 +265,7 @@ function Task({ order, payee, busy, run }: { order: StandingOrder; payee?: strin
       {open && (
         <div className="mt-3 border-t border-line pt-3">
           {order.kind === "pay" && (
-            <AutoPay order={order} busy={busy} onSave={(terms) => void run(() => updateStanding(order.id, { action: "set_auto", ...terms }))} />
+            <AutoPay order={order} busy={busy} onSave={(terms) => void run((pin) => updateStanding(order.id, { action: "set_auto", ...terms }, pin))} />
           )}
           <div className="mt-2 flex gap-2">
             <button

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { SelectRow } from "@/components/SelectRow";
+import { usePin } from "@/components/PinProvider";
+import { pinStatus } from "@/lib/pin";
 import {
   type Settings,
   fromMinor,
@@ -17,7 +19,10 @@ const input =
 
 /** The user's Axis configuration, stored and enforced by brain for every connected app. */
 export function Configuration() {
+  const { withPin, changePin } = usePin();
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [pinSet, setPinSet] = useState<boolean | null>(null);
+  const [pinNote, setPinNote] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [perPayment, setPerPayment] = useState("");
@@ -35,13 +40,19 @@ export function Configuration() {
     loadSettings()
       .then(apply)
       .catch(() => setError("Couldn't load your settings. Check your connection and reopen this page."));
+    pinStatus()
+      .then((s) => setPinSet(s.set))
+      .catch(() => setPinSet(null));
   }, []);
 
-  async function run(action: () => Promise<Settings>) {
+  /** Run a change; if it needs the transaction PIN, the user is asked for it. */
+  async function run(action: (pin?: string) => Promise<Settings>) {
     setBusy(true);
     setError("");
     try {
-      apply(await action());
+      const next = await withPin(action);
+      if (!next) return false;
+      apply(next);
       return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't save. Try again.");
@@ -80,10 +91,41 @@ export function Configuration() {
             aria-checked={settings.spendingPaused}
             aria-label="Pause all spending"
             disabled={busy}
-            onClick={() => run(() => saveSettings({ spendingPaused: !settings.spendingPaused }))}
+            onClick={() => run((pin) => saveSettings({ spendingPaused: !settings.spendingPaused }, pin))}
             className={`relative mt-1 h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-40 ${settings.spendingPaused ? "bg-red" : "bg-unfilled"}`}
           >
             <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${settings.spendingPaused ? "left-6" : "left-1"}`} />
+          </button>
+        </div>
+      </div>
+
+      <div className={card}>
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="text-[15px] font-bold text-ink">Transaction PIN</div>
+            <p className="mt-0.5 text-[12.5px] leading-[1.45] text-faint">
+              {pinSet === false
+                ? "Create one to approve payments and turn on auto-pay."
+                : "Needed to approve payments, turn on auto-pay and raise your limits."}
+            </p>
+            {pinNote && <p className="mt-1 text-[12px] font-semibold text-ink">{pinNote}</p>}
+          </div>
+          <button
+            disabled={busy}
+            onClick={async () => {
+              setPinNote("");
+              try {
+                if (await changePin()) {
+                  setPinSet(true);
+                  setPinNote("PIN saved.");
+                }
+              } catch (e) {
+                setPinNote(e instanceof Error ? e.message : "Couldn't save your PIN.");
+              }
+            }}
+            className="shrink-0 rounded-full bg-ink px-4 py-2.5 text-[12.5px] font-bold text-white transition-colors hover:bg-red disabled:opacity-40"
+          >
+            {pinSet === false ? "Create PIN" : "Change PIN"}
           </button>
         </div>
       </div>
@@ -99,10 +141,11 @@ export function Configuration() {
               selected={s.enabled}
               disabled={busy}
               onClick={() =>
-                run(() =>
-                  saveSettings({
-                    disabledServices: s.enabled ? [...disabled, s.id] : disabled.filter((id) => id !== s.id),
-                  }),
+                run((pin) =>
+                  saveSettings(
+                    { disabledServices: s.enabled ? [...disabled, s.id] : disabled.filter((id) => id !== s.id) },
+                    pin,
+                  ),
                 )
               }
             />
@@ -149,7 +192,7 @@ export function Configuration() {
               setError((e as Error).message);
               return;
             }
-            if (await run(() => saveSettings(patch))) setSaved(true);
+            if (await run((pin) => saveSettings(patch, pin))) setSaved(true);
           }}
           className="w-full rounded-full bg-ink py-3.5 text-sm font-bold text-white transition-colors hover:bg-red disabled:opacity-40"
         >

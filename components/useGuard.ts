@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useOnboarding } from "./OnboardingProvider";
 import { SKIP_ONBOARDING } from "@/lib/flags";
 import { rememberReturnTo } from "@/lib/returnTo";
@@ -12,15 +12,11 @@ type Requirement = "authed" | "named" | "complete";
  * Route guard. Redirects (never pushes — a pushing guard traps the back button)
  * to the earliest unmet onboarding step. It only fires once the provider has
  * hydrated from sessionStorage, so a restored session isn't bounced to /auth on
- * first paint. Pass preserveQuery on /chat so a shared ?q intent survives the
- * onboarding round-trip and the user lands back on it.
+ * first paint. A deep link (an approval, a place tag, a payment) is remembered,
+ * so the user lands back on it after signing in.
  */
-export function useGuard(
-  req: Requirement,
-  opts?: { preserveQuery?: boolean },
-): boolean {
+export function useGuard(req: Requirement): boolean {
   const router = useRouter();
-  const search = useSearchParams();
   const { hydrated, authMethod, name } = useOnboarding();
 
   useEffect(() => {
@@ -35,14 +31,10 @@ export function useGuard(
     // "complete" also allows in once authed + named (channels is optional).
 
     if (target) {
-      rememberReturnTo(window.location.pathname);
-      if (opts?.preserveQuery) {
-        const qs = search.toString();
-        if (qs) target += `?${qs}`;
-      }
+      rememberReturnTo(window.location.pathname + window.location.search);
       router.replace(target);
     }
-  }, [hydrated, authMethod, name, req, opts?.preserveQuery, router, search]);
+  }, [hydrated, authMethod, name, req, router]);
 
   return hydrated;
 }

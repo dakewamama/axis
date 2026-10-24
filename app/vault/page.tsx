@@ -95,6 +95,14 @@ export default function VaultPage() {
             loaded && (
               <>
                 {counts[tab] === 0 && <p className="mb-4 text-[13.5px] leading-[1.5] text-muted">{meta.empty}</p>}
+                {tab === "beneficiaries" && counts.beneficiaries > 0 && (
+                  <button
+                    onClick={() => router.push("/pay")}
+                    className="mb-3 w-full rounded-full bg-red py-3 text-[13.5px] font-bold text-white shadow-cta transition-colors hover:bg-red-dark"
+                  >
+                    Pay someone
+                  </button>
+                )}
                 <ul className="flex flex-col gap-2">
                   {tab === "beneficiaries" &&
                     vault.beneficiaries.map((b) => <BeneficiaryRow key={b.id} b={b} onEdit={() => setEditing({ section: tab, id: b.id })} />)}

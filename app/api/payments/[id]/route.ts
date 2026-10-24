@@ -3,7 +3,7 @@ import { brain, brainConfigured } from "@/lib/brain";
 import { readSession } from "@/lib/session";
 
 // A payment request waiting for the signed-in owner's decision (e.g. one asked
-// for from ChatGPT or Claude). Approve/Decline go through /api/chat as buttonId.
+// for from ChatGPT or Claude). Approve/Decline go through /api/payments/<id>/decide.
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/payments/[id]">) {
   if (!brainConfigured()) return NextResponse.json({ error: "not configured" }, { status: 503 });
   const session = readSession(req);

@@ -1,5 +1,6 @@
 // Recurring tasks (scheduled payments to saved people, rate alerts), stored and run by brain.
 import { usdc } from "@/lib/activity";
+import { readOrPin } from "@/lib/pin";
 export type Schedule =
   | { every: "month"; day: number }
   | { every: "week"; weekday: number }
@@ -32,19 +33,19 @@ async function call(path: string, body?: unknown): Promise<StandingOrder[]> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = (await res.json().catch(() => ({}))) as { orders?: StandingOrder[]; error?: string };
-  if (!res.ok) throw new Error(data.error || `Couldn't reach recurring tasks (${res.status}).`);
-  return data.orders ?? [];
+  return (await readOrPin<{ orders?: StandingOrder[] }>(res, `Couldn't reach recurring tasks (${res.status}).`)).orders ?? [];
 }
 
 export const loadStanding = () => call("/api/standing");
-export const createStanding = (body: Record<string, unknown>) => call("/api/standing", body);
+const withPin = (pin?: string) => (pin ? { pin } : {});
+/** Turning on auto-pay needs the transaction PIN (see usePin). */
+export const createStanding = (body: Record<string, unknown>, pin?: string) => call("/api/standing", { ...body, ...withPin(pin) });
 /** Auto-pay terms: most per payment, when it ends, and an optional total allowance (USDC base units). */
 export type AutoTerms = { autoMaxMinor: string | null; autoUntil?: string; autoTotalMinor?: string | null };
 
-export const confirmStanding = (id: string, terms: AutoTerms) => call(`/api/standing/${id}/confirm`, terms);
-export const updateStanding = (id: string, body: { action: "pause" | "resume" | "end" | "set_auto" } & Partial<AutoTerms>) =>
-  call(`/api/standing/${id}`, body);
+export const confirmStanding = (id: string, terms: AutoTerms, pin?: string) => call(`/api/standing/${id}/confirm`, { ...terms, ...withPin(pin) });
+export const updateStanding = (id: string, body: { action: "pause" | "resume" | "end" | "set_auto" } & Partial<AutoTerms>, pin?: string) =>
+  call(`/api/standing/${id}`, { ...body, ...withPin(pin) });
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
